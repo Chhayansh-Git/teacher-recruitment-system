@@ -1,0 +1,550 @@
+// ============================================================
+// FILE: prisma/schema.prisma — Complete Database Schema
+// ============================================================
+//
+// WHAT IS THIS FILE?
+//   This is the "blueprint" for your entire database.
+//   Every table, every column, every relationship is defined here.
+//   Prisma reads this file and:
+//   1. Creates the actual tables in PostgreSQL (migration)
+//   2. Generates a JavaScript client to query those tables
+//
+// HOW TO READ:
+//   "model" = a database table
+//   @id = primary key (unique row identifier)
+//   @unique = no duplicates allowed
+//   @default = automatic value if none given
+//   @relation = link between tables
+//   ? = optional (can be null)
+//   [] = array/list
+//
+// RELATIONSHIPS:
+//   One-to-One:   User <-> School
+//   One-to-Many:  School -> Requirements
+//   Many-to-Many: Requirements <-> Candidates (via Shortlist)
+// ============================================================
+
+// Prisma configuration
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// ENUMS — Allowed value sets (like dropdown menus)
+// ============================================================
+
+enum Role {
+  ADMIN
+  SCHOOL
+  CANDIDATE
+}
+
+enum UserStatus {
+  PENDING     // OTP not verified yet
+  VERIFIED    // Active account
+  SUSPENDED   // Temporarily disabled
+  DISMISSED   // Permanently banned
+}
+
+enum CandidateStatus {
+  ACTIVE      // Available for matching
+  PUSHED      // Currently in a pipeline
+  LOCKED      // Placed, locked for 1 year
+  DISMISSED   // Banned
+}
+
+enum RequirementStatus {
+  ACTIVE
+  FILLED
+  CLOSED
+}
+
+enum ShortlistStatus {
+  PENDING     // Awaiting admin approval
+  APPROVED    // Admin approved
+  REJECTED    // Admin rejected
+}
+
+enum PipelineStatus {
+  ACTIVE      // School is evaluating candidate
+  RELEASED    // School or system released candidate
+  SELECTED    // School confirmed hire
+  TIMEOUT     // Auto-released (7-day inactivity)
+}
+
+enum LockInStatus {
+  ACTIVE      // Currently locked
+  EXPIRED     // 1 year passed
+  UNLOCKED    // Admin overrode
+}
+
+enum MessageType {
+  TEXT
+  FILE
+  TEMPLATE
+  SYSTEM
+}
+
+enum ThreadStatus {
+  ACTIVE
+  CLOSED
+}
+
+enum InterviewMode {
+  VIDEO
+  IN_PERSON
+  PHONE
+}
+
+enum InterviewStatus {
+  SCHEDULED
+  INVITED
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
+}
+
+enum PaymentStatus {
+  CREATED
+  PAID
+  FAILED
+  REFUNDED
+  EXPIRED
+}
+
+enum StaffType {
+  TEACHING
+  NON_TEACHING
+  BOTH
+}
+
+enum GenderPreference {
+  MALE
+  FEMALE
+  ANY
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  PUSH
+  RELEASE
+  SELECT
+  LOCK
+  UNLOCK
+  DISMISS
+  APPROVE
+  REJECT
+  FLAG
+  PAYMENT
+}
+
+// ============================================================
+// MODELS (Database Tables)
+// ============================================================
+
+// USER — Base account for every person (admin, school, candidate).
+// Holds login credentials. Profile data is in School/Candidate models.
+// WHY SEPARATE? Prevents 50+ columns where half are always empty.
+model User {
+  id        String     @id @default(uuid())
+  email     String
+  phone     String
+  password  String     // bcrypt hash — NEVER plain text
+
+  role      Role
+  status    UserStatus @default(PENDING)
+
+  // Schools get a temp password; this tracks if they changed it
+  passwordChanged Boolean @default(false)
+
+  // Last 3 password hashes — prevents reusing old passwords
+  passwordHistory String[] @default([])
+
+  // Brute-force protection
+  failedLoginAttempts Int      @default(0)
+  lockedUntil         DateTime?
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime? // Soft delete — never actually delete rows
+
+  // Preferences
+  notificationPreferences Json @default("{\"email\": true, \"sms\": true, \"inApp\": true}")
+
+  // Relations (links to other tables)
+  school         School?
+  candidate      Candidate?
+  trustedDevices TrustedDevice[]
+  auditLogs      AuditLog[]
+  notifications  Notification[]
+  sentMessages   Message[]
+
+  @@unique([email, deletedAt])
+  @@unique([phone, role, deletedAt])
+  @@index([role, status])
+  @@map("users")
+}
+
+// SCHOOL — Profile for school accounts
+model School {
+  id             String  @id @default(uuid())
+  userId         String  @unique
+  user           User    @relation(fields: [userId], references: [id])
+
+  schoolName     String
+  affiliationNo  String?
+  address        String
+  city           String
+  state          String
+  pinCode        String
+  contactNo      String
+  email          String
+  principalName  String
+  schoolLevel    String
+  board          String
+  strength       Int?
+
+  // Payment
+  isFree         Boolean       @default(false)
+  paymentStatus  PaymentStatus?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  requirements Requirement[]
+  pipelines    Pipeline[]
+  threads      Thread[]
+  interviews   Interview[]
+  payments     Payment[]
+  lockIns      LockIn[]
+
+  @@map("schools")
+}
+
+// CANDIDATE — Profile for job seekers
+// Fields marked PRIVATE are NEVER shown to schools (privacy filter strips them)
+model Candidate {
+  id                String          @id @default(uuid())
+  userId            String          @unique
+  user              User            @relation(fields: [userId], references: [id])
+
+  name              String
+  contactNo         String          // PRIVATE
+  email             String          // PRIVATE
+  whatsappNo        String?         // PRIVATE
+  gender            String
+  dob               DateTime
+  address           String          // PRIVATE
+
+  primaryRole       String          // Main teaching subject
+  qualifications    Json            // Array of {degree, university, year}
+  experience        Json            // Array of {school, role, years}
+  expectedSalary    Int?
+  locationInterested String[]       // Cities where candidate wants to work
+
+  status            CandidateStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  shortlists Shortlist[]
+  pipelines  Pipeline[]
+  threads    Thread[]
+  lockIns    LockIn[]
+  feedbacks  Feedback[]
+
+  @@index([primaryRole, status])
+  @@map("candidates")
+}
+
+// REQUIREMENT — A school's job posting
+model Requirement {
+  id              String            @id @default(uuid())
+  schoolId        String
+  school          School            @relation(fields: [schoolId], references: [id])
+
+  subjects        String[]
+  postDesignation String
+  genderPref      GenderPreference  @default(ANY)
+  staffType       StaffType         @default(TEACHING)
+  qualification   String
+  experienceMin   Int               @default(0)
+  salaryOffered   Int?
+  countNeeded     Int               @default(1)
+  description     String?
+
+  status          RequirementStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  shortlists Shortlist[]
+
+  @@index([schoolId, status])
+  @@map("requirements")
+}
+
+// SHORTLIST — School's request to consider a candidate (needs admin approval)
+model Shortlist {
+  id              String          @id @default(uuid())
+  requirementId   String
+  requirement     Requirement     @relation(fields: [requirementId], references: [id])
+  candidateId     String
+  candidate       Candidate       @relation(fields: [candidateId], references: [id])
+
+  status          ShortlistStatus @default(PENDING)
+  adminNotes      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  pipeline Pipeline?
+
+  @@unique([requirementId, candidateId])
+  @@index([status, createdAt])
+  @@map("shortlists")
+}
+
+// PIPELINE — Active recruitment journey (THE CORE entity)
+// CRITICAL: Only ONE active pipeline per candidate at any time
+model Pipeline {
+  id            String         @id @default(uuid())
+  shortlistId   String         @unique
+  shortlist     Shortlist      @relation(fields: [shortlistId], references: [id])
+  candidateId   String
+  candidate     Candidate      @relation(fields: [candidateId], references: [id])
+  schoolId      String
+  school        School         @relation(fields: [schoolId], references: [id])
+
+  status        PipelineStatus @default(ACTIVE)
+
+  pushedAt      DateTime       @default(now())
+  releasedAt    DateTime?
+  releaseReason String?
+
+  // Tracks school's last activity for 7-day auto-release
+  lastSchoolActivityAt DateTime @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  thread     Thread?
+  lockIn     LockIn?
+  interviews Interview[]
+  feedbacks  Feedback[]
+
+  @@index([candidateId, status])
+  @@index([status, pushedAt])
+  @@map("pipelines")
+}
+
+// LOCK_IN — 1-year placement commitment
+model LockIn {
+  id          String       @id @default(uuid())
+  pipelineId  String       @unique
+  pipeline    Pipeline     @relation(fields: [pipelineId], references: [id])
+  candidateId String
+  candidate   Candidate    @relation(fields: [candidateId], references: [id])
+  schoolId    String
+  school      School       @relation(fields: [schoolId], references: [id])
+
+  status      LockInStatus @default(ACTIVE)
+  lockedAt    DateTime     @default(now())
+  expiresAt   DateTime     // lockedAt + 1 year
+
+  unlockedBy   String?
+  unlockReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([candidateId, status])
+  @@index([expiresAt, status])
+  @@map("lock_ins")
+}
+
+// THREAD — Chat conversation between school and candidate
+model Thread {
+  id          String       @id @default(uuid())
+  pipelineId  String       @unique
+  pipeline    Pipeline     @relation(fields: [pipelineId], references: [id])
+  schoolId    String
+  school      School       @relation(fields: [schoolId], references: [id])
+  candidateId String
+  candidate   Candidate    @relation(fields: [candidateId], references: [id])
+
+  status      ThreadStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages Message[]
+
+  @@index([schoolId])
+  @@index([candidateId])
+  @@map("threads")
+}
+
+// MESSAGE — Single message in a thread
+model Message {
+  id        String      @id @default(uuid())
+  threadId  String
+  thread    Thread      @relation(fields: [threadId], references: [id])
+  senderId  String
+  sender    User        @relation(fields: [senderId], references: [id])
+
+  content   String
+  type      MessageType @default(TEXT)
+
+  isFlagged   Boolean   @default(false) // Contact leak detector flagged this
+  flagReasons String[]  @default([])
+
+  fileUrl   String?
+  fileName  String?
+  fileSize  Int?
+
+  readAt    DateTime?
+
+  createdAt DateTime    @default(now())
+
+  @@index([threadId, createdAt])
+  @@map("messages")
+}
+
+// INTERVIEW — Scheduled interview
+model Interview {
+  id          String          @id @default(uuid())
+  pipelineId  String
+  pipeline    Pipeline        @relation(fields: [pipelineId], references: [id])
+  schoolId    String
+  school      School          @relation(fields: [schoolId], references: [id])
+
+  scheduledAt DateTime
+  duration    Int             @default(60)
+  mode        InterviewMode
+  location    String?
+  meetingLink String?
+
+  status      InterviewStatus @default(SCHEDULED)
+  inviteSent  Boolean         @default(false)
+  notes       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([pipelineId])
+  @@index([scheduledAt])
+  @@map("interviews")
+}
+
+// PAYMENT — Razorpay payment records
+model Payment {
+  id              String        @id @default(uuid())
+  schoolId        String
+  school          School        @relation(fields: [schoolId], references: [id])
+
+  razorpayOrderId   String      @unique
+  razorpayPaymentId String?
+  razorpaySignature String?
+
+  amount          Int
+  currency        String        @default("INR")
+  status          PaymentStatus @default(CREATED)
+
+  invoiceNumber   String?
+  gstAmount       Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([schoolId])
+  @@map("payments")
+}
+
+// TRUSTED_DEVICE — Instagram-style device recognition
+model TrustedDevice {
+  id                String   @id @default(uuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id])
+
+  deviceFingerprint String
+  deviceName        String
+  ipAddress         String
+  locationCity      String?
+  lastUsedAt        DateTime @default(now())
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, deviceFingerprint])
+  @@map("trusted_devices")
+}
+
+// NOTIFICATION — In-app notifications
+model Notification {
+  id      String  @id @default(uuid())
+  userId  String
+  user    User    @relation(fields: [userId], references: [id])
+
+  title   String
+  message String
+  type    String
+  link    String?
+
+  isRead  Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead, createdAt])
+  @@map("notifications")
+}
+
+// AUDIT_LOG — Record of every important action (security, compliance)
+model AuditLog {
+  id           String      @id @default(uuid())
+  userId       String?
+  user         User?       @relation(fields: [userId], references: [id])
+
+  action       AuditAction
+  resourceType String
+  resourceId   String
+
+  oldValues    Json?
+  newValues    Json?
+  description  String?
+
+  ipAddress    String?
+  userAgent    String?
+
+  createdAt    DateTime    @default(now())
+
+  @@index([userId, createdAt])
+  @@index([resourceType, resourceId])
+  @@map("audit_logs")
+}
+
+// FEEDBACK — Post-placement rating (ADMIN-ONLY visibility)
+model Feedback {
+  id          String    @id @default(uuid())
+  pipelineId  String
+  pipeline    Pipeline  @relation(fields: [pipelineId], references: [id])
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id])
+
+  reviewerRole String
+  rating       Int
+  comment      String?
+
+  createdAt DateTime @default(now())
+
+  @@unique([pipelineId, reviewerRole])
+  @@map("feedbacks")
+}
