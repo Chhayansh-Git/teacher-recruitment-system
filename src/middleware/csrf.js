@@ -17,7 +17,15 @@ function csrfProtection(req, res, next) {
   }
 
   // Login/Register don't need CSRF as they don't use cookies for auth yet
-  if (['/api/v1/auth/login', '/api/v1/auth/register/school', '/api/v1/auth/register/candidate'].includes(req.originalUrl)) {
+  const csrfExemptRoutes = [
+    '/api/v1/auth/login',
+    '/api/v1/auth/register/school',
+    '/api/v1/auth/register/candidate',
+    '/api/v1/auth/refresh',
+    '/api/v1/auth/verify-otp',
+    '/api/v1/auth/verify-admin-login'
+  ];
+  if (csrfExemptRoutes.includes(req.originalUrl)) {
     return next();
   }
 
