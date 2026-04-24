@@ -1,36 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🎨 Teacher Recruitment System — Frontend Interface
 
-## Getting Started
+This is the frontend user interface for the **Teacher Recruitment System**, built on top of [Next.js 14](https://nextjs.org/) (App Router) to deliver a lightning-fast, SEO-friendly, and highly secure user experience.
 
-First, run the development server:
+The UI is designed to serve three distinct roles (Candidates, Schools, and Administrators) through unified login flows and strictly segregated dashboard layouts.
+
+## 🚀 Technology Highlights
+
+- **Framework**: Next.js 14 (App Router)
+- **Styling**: Tailwind CSS for highly responsive, utility-first UI design
+- **State Management**: React Context (`AuthContext`, `ToastContext`)
+- **Real-time Engine**: Socket.io-client for instant chat & notification delivery
+- **Fonts**: Optimized with `next/font` using [Geist](https://vercel.com/font)
+- **Security**: Built-in CSRF token injection and JWT-based authentication flows
+
+## 📁 Directory Architecture
+
+```bash
+frontend/
+├── app/                  # Next.js App Router Pages
+│   ├── admin/            # Administrator Dashboard & Reports
+│   ├── candidate/        # Candidate Profile & Pipeline View
+│   ├── school/           # School Requirements & Shortlisting
+│   ├── login/            # Unified Authentication Flow
+│   └── settings/         # Global User Settings (2FA, Sessions)
+├── components/           # Reusable UI Elements (Modals, Sidebars, Pagination)
+├── context/              # Global React Contexts
+├── lib/                  # Utilities (e.g., Axios API Client wrapper)
+└── public/               # Static assets (Images, Icons)
+```
+
+## 🛠️ Development Setup
+
+### Prerequisites
+Make sure the main backend API server is running on `http://localhost:5000` (or as defined in your `.env` configuration) before starting the frontend, as the UI heavily relies on the backend API for authentication and data fetching.
+
+### Running the App
+
+First, install the necessary dependencies:
+
+```bash
+npm install
+```
+
+Start the Next.js development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser. The application will automatically reload as you modify the source files.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## 🔒 Security Implementations in the UI
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **CSRF Token Injection**: The API client (`lib/api.js`) automatically reads the double-submit cookie and attaches the `X-CSRF-Token` header to all non-GET requests.
+- **Route Protection**: The `<ProtectedRoute>` wrapper dynamically verifies the active user's JWT and Role, redirecting unauthorized traffic gracefully.
+- **Dynamic 2FA**: The `login` interface natively supports progressive authentication. If an Admin signs in, it pauses the flow and renders an OTP verification form dynamically.
 
-## Learn More
+## 🚢 Building for Production
 
-To learn more about Next.js, take a look at the following resources:
+To create an optimized production build:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run build
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+After building, start the production server:
 
-## Deploy on Vercel
+```bash
+npm run start
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🔗 Learn More
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+To learn more about the underlying technologies used in this frontend:
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
+- [Socket.io Client API](https://socket.io/docs/v4/client-api/)
