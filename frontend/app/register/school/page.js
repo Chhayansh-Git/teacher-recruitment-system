@@ -260,24 +260,22 @@ export default function SchoolRegisterPage() {
                 }}
               />
             </Grid>
-            <Grid item xs={12} sm={6} sx={{ display: 'flex', alignItems: 'flex-start' }}>
-              {!isPhoneVerified && (
-                <>
-                  {!isPhoneOtpSent ? (
-                    <Button variant="outlined" onClick={handleSendPhoneOTP} disabled={submitting || !formData.phone} sx={{ height: 56, borderRadius: '10px', fontWeight: 600, px: 3, whiteSpace: 'nowrap' }}>
-                      {submitting ? <CircularProgress size={20} /> : 'Send OTP'}
+            {!isPhoneVerified && (
+              <Grid item xs={12} sm={6} sx={{ display: 'flex', alignItems: 'flex-start' }}>
+                {!isPhoneOtpSent ? (
+                  <Button variant="outlined" onClick={handleSendPhoneOTP} disabled={submitting || !formData.phone} sx={{ height: 56, borderRadius: '10px', fontWeight: 600, px: 3, whiteSpace: 'nowrap' }}>
+                    {submitting ? <CircularProgress size={20} /> : 'Send OTP'}
+                  </Button>
+                ) : (
+                  <Stack direction="row" spacing={1} sx={{ width: '100%' }}>
+                    <TextField label="Phone OTP" value={phoneOtp} onChange={(e) => setPhoneOtp(e.target.value)} fullWidth sx={fieldSx} inputProps={{ maxLength: 6, style: { letterSpacing: '0.2em', fontWeight: 600 } }} />
+                    <Button variant="contained" onClick={handleVerifyPhoneOTP} disabled={submitting} sx={{ height: 56, borderRadius: '10px', fontWeight: 600, px: 3, bgcolor: '#2563EB', '&:hover': { bgcolor: '#1D4ED8' } }}>
+                      Verify
                     </Button>
-                  ) : (
-                    <Stack direction="row" spacing={1} sx={{ width: '100%' }}>
-                      <TextField label="Phone OTP" value={phoneOtp} onChange={(e) => setPhoneOtp(e.target.value)} fullWidth sx={fieldSx} inputProps={{ maxLength: 6, style: { letterSpacing: '0.2em', fontWeight: 600 } }} />
-                      <Button variant="contained" onClick={handleVerifyPhoneOTP} disabled={submitting} sx={{ height: 56, borderRadius: '10px', fontWeight: 600, px: 3, bgcolor: '#2563EB', '&:hover': { bgcolor: '#1D4ED8' } }}>
-                        Verify
-                      </Button>
-                    </Stack>
-                  )}
-                </>
-              )}
-            </Grid>
+                  </Stack>
+                )}
+              </Grid>
+            )}
 
             <Grid item xs={12}><Divider sx={{ my: 1 }} /></Grid>
 
@@ -287,7 +285,7 @@ export default function SchoolRegisterPage() {
             <Grid item xs={12} sm={5}>
               <TextField label="Contact Number" name="contactNo" type="tel" placeholder="Office landline / mobile" value={formData.contactNo} onChange={handleChange} required fullWidth sx={fieldSx} helperText="School contact (can differ from phone)" />
             </Grid>
-            <Grid item xs={12} sm={5}>
+            <Grid item xs={12} sm={6}>
               <TextField label="School Level" name="schoolLevel" value={formData.schoolLevel} onChange={handleChange} required fullWidth select sx={fieldSx}>
                 <MenuItem value="">Select</MenuItem>
                 <MenuItem value="Primary">Primary (1–5)</MenuItem>
@@ -295,7 +293,7 @@ export default function SchoolRegisterPage() {
                 <MenuItem value="Senior Secondary">Senior Secondary (11–12)</MenuItem>
               </TextField>
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid item xs={12} sm={6}>
               <TextField label="Board" name="board" value={formData.board} onChange={handleChange} required fullWidth select sx={fieldSx}>
                 <MenuItem value="">Select</MenuItem>
                 <MenuItem value="CBSE">CBSE</MenuItem>
@@ -305,7 +303,7 @@ export default function SchoolRegisterPage() {
                 <MenuItem value="Other">Other</MenuItem>
               </TextField>
             </Grid>
-            <Grid item xs={12} sm={3}>
+            <Grid item xs={12} sm={4}>
               <TextField label="Strength" name="strength" type="number" placeholder="1500" value={formData.strength} onChange={handleChange} fullWidth sx={fieldSx} helperText="Students" />
             </Grid>
           </Grid>
