@@ -141,10 +141,10 @@ const loginLimiter = createRateLimiter({
   message: 'Too many login attempts. Account locked for 15 minutes.',
 });
 
-/** Registration: 3 per hour per IP */
+/** Registration: 15 per hour per IP (allows multi-step OTPs + form submission + retries) */
 const registerLimiter = createRateLimiter({
   prefix: 'register',
-  maxRequests: 3,
+  maxRequests: 15,
   windowSeconds: 3600, // 1 hour
   keyBy: 'ip',
   message: 'Too many registration attempts. Please try again in an hour.',
