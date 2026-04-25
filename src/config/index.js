@@ -73,11 +73,14 @@ const config = {
     senderId: process.env.MSG91_SENDER_ID || 'TCHREC',
   },
 
-  // --- Email (SendGrid) ---
-  sendgrid: {
-    apiKey: process.env.SENDGRID_API_KEY,
-    fromEmail: process.env.SENDGRID_FROM_EMAIL || 'noreply@yourplatform.com',
-    fromName: process.env.SENDGRID_FROM_NAME || 'Teacher Recruitment System',
+  // --- Email (SMTP via Nodemailer) ---
+  smtp: {
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: parseInt(process.env.SMTP_PORT, 10) || 587,
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+    fromEmail: process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER,
+    fromName: process.env.SMTP_FROM_NAME || 'Teacher Recruitment System',
   },
 
   // --- Payments (Razorpay) ---
@@ -125,7 +128,8 @@ const requiredInProduction = [
   'JWT_ACCESS_SECRET',
   'JWT_REFRESH_SECRET',
   'MSG91_AUTH_KEY',
-  'SENDGRID_API_KEY',
+  'SMTP_USER',
+  'SMTP_PASS',
   'RAZORPAY_KEY_ID',
   'RAZORPAY_KEY_SECRET',
 ];

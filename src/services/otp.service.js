@@ -176,33 +176,39 @@ async function sendOTPviaSMS(phone, otp) {
 }
 
 /**
- * sendOTPviaEmail — Sends OTP to user's email via SendGrid.
+ * sendOTPviaEmail — Sends OTP to user's email via SMTP (Nodemailer).
  *
  * @param {string} email — Email address to send to
  * @param {string} otp — The 6-digit OTP
  *
- * Uses SendGrid SDK to send a nicely formatted HTML email.
- * Falls back to console logging if SendGrid is not configured.
+ * Uses Nodemailer to send a nicely formatted HTML email.
+ * Falls back to console logging if SMTP password is not configured.
  */
 async function sendOTPviaEmail(email, otp) {
   const config = require('../config');
 
-  // If SendGrid API key is not set or is a placeholder, log to console
-  if (!config.sendgrid.apiKey || config.sendgrid.apiKey.startsWith('your_')) {
+  // If SMTP password is not set or is a placeholder, log to console
+  if (!config.smtp.pass || config.smtp.pass === 'your_google_app_password') {
     logger.info(`📧 [DEV] Email OTP for ${logger.maskEmail(email)}: ${otp}`);
     return;
   }
 
   try {
-    const sgMail = require('@sendgrid/mail');
-    sgMail.setApiKey(config.sendgrid.apiKey);
-
-    await sgMail.send({
-      to: email,
-      from: {
-        email: config.sendgrid.fromEmail,
-        name: config.sendgrid.fromName,
+    const nodemailer = require('nodemailer');
+    
+    const transporter = nodemailer.createTransport({
+      host: config.smtp.host,
+      port: config.smtp.port,
+      secure: config.smtp.port === 465, // true for 465, false for other ports
+      auth: {
+        user: config.smtp.user,
+        pass: config.smtp.pass,
       },
+    });
+
+    await transporter.sendMail({
+      from: `"${config.smtp.fromName}" <${config.smtp.fromEmail}>`,
+      to: email,
       subject: 'Your Verification Code — Teacher Recruitment System',
       html: `
         <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px; background: #f8fafc; border-radius: 12px;">
@@ -229,7 +235,7 @@ async function sendOTPviaEmail(email, otp) {
   } catch (err) {
     // Don't crash the whole registration flow if email fails
     // The OTP is also logged to console as fallback
-    logger.error(`Failed to send email OTP: ${err.message}`);
+    logger.error(`Failed to send email OTP via SMTP: ${err.message}`);
     logger.info(`📧 [FALLBACK] Email OTP for ${logger.maskEmail(email)}: ${otp}`);
   }
 }
