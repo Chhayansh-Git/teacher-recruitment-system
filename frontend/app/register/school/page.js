@@ -229,16 +229,7 @@ export default function SchoolRegisterPage() {
       case 2:
         return (
           <Grid container spacing={2.5}>
-            {/* Phone with inline verification */}
-            {!isPhoneVerified && (
-              <Grid item xs={12}>
-                <Box sx={{ bgcolor: '#FFFBEB', p: 2, borderRadius: '12px', border: '1px solid #FDE68A', mb: 1 }}>
-                  <Typography variant="body2" sx={{ color: '#92400E' }}>
-                    📱 Please verify your phone number to complete registration.
-                  </Typography>
-                </Box>
-              </Grid>
-            )}
+            {/* Inline phone verification */}
             <Grid item xs={12} sm={isPhoneVerified ? 12 : 6}>
               <TextField
                 label="Phone Number"
@@ -251,6 +242,7 @@ export default function SchoolRegisterPage() {
                 fullWidth
                 disabled={isPhoneVerified || submitting}
                 sx={fieldSx}
+                helperText={!isPhoneVerified ? 'Verification required to complete registration' : ''}
                 InputProps={{
                   endAdornment: isPhoneVerified ? (
                     <InputAdornment position="end">
@@ -279,10 +271,10 @@ export default function SchoolRegisterPage() {
 
             <Grid item xs={12}><Divider sx={{ my: 1 }} /></Grid>
 
-            <Grid item xs={12} sm={7}>
+            <Grid item xs={12} sm={6}>
               <TextField label="Principal Name" name="principalName" placeholder="Dr. Sharma" value={formData.principalName} onChange={handleChange} required fullWidth sx={fieldSx} />
             </Grid>
-            <Grid item xs={12} sm={5}>
+            <Grid item xs={12} sm={6}>
               <TextField label="Contact Number" name="contactNo" type="tel" placeholder="Office landline / mobile" value={formData.contactNo} onChange={handleChange} required fullWidth sx={fieldSx} helperText="School contact (can differ from phone)" />
             </Grid>
             <Grid item xs={12} sm={6}>
@@ -303,8 +295,8 @@ export default function SchoolRegisterPage() {
                 <MenuItem value="Other">Other</MenuItem>
               </TextField>
             </Grid>
-            <Grid item xs={12} sm={4}>
-              <TextField label="Strength" name="strength" type="number" placeholder="1500" value={formData.strength} onChange={handleChange} fullWidth sx={fieldSx} helperText="Students" />
+            <Grid item xs={12} sm={6}>
+              <TextField label="Strength" name="strength" type="number" placeholder="1500" value={formData.strength} onChange={handleChange} fullWidth sx={fieldSx} helperText="Number of students" />
             </Grid>
           </Grid>
         );
