@@ -230,7 +230,7 @@ export default function SchoolRegisterPage() {
         return (
           <Grid container spacing={2.5}>
             {/* Inline phone verification */}
-            <Grid item xs={12} sm={isPhoneVerified ? 12 : 6}>
+            <Grid item xs={12} md={isPhoneVerified ? 12 : 8}>
               <TextField
                 label="Phone Number"
                 name="phone"
@@ -253,9 +253,9 @@ export default function SchoolRegisterPage() {
               />
             </Grid>
             {!isPhoneVerified && (
-              <Grid item xs={12} sm={6} sx={{ display: 'flex', alignItems: 'flex-start' }}>
+              <Grid item xs={12} md={4} sx={{ display: 'flex', alignItems: 'flex-start' }}>
                 {!isPhoneOtpSent ? (
-                  <Button variant="outlined" onClick={handleSendPhoneOTP} disabled={submitting || !formData.phone} sx={{ height: 56, borderRadius: '10px', fontWeight: 600, px: 3, whiteSpace: 'nowrap' }}>
+                  <Button variant="outlined" onClick={handleSendPhoneOTP} disabled={submitting || !formData.phone} sx={{ height: 56, width: '100%', borderRadius: '10px', fontWeight: 600, px: 3, whiteSpace: 'nowrap' }}>
                     {submitting ? <CircularProgress size={20} /> : 'Send OTP'}
                   </Button>
                 ) : (
@@ -271,13 +271,13 @@ export default function SchoolRegisterPage() {
 
             <Grid item xs={12}><Divider sx={{ my: 1 }} /></Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} md={6}>
               <TextField label="Principal Name" name="principalName" placeholder="Dr. Sharma" value={formData.principalName} onChange={handleChange} required fullWidth sx={fieldSx} />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} md={6}>
               <TextField label="Contact Number" name="contactNo" type="tel" placeholder="Office landline / mobile" value={formData.contactNo} onChange={handleChange} required fullWidth sx={fieldSx} helperText="School contact (can differ from phone)" />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} md={6}>
               <TextField label="School Level" name="schoolLevel" value={formData.schoolLevel} onChange={handleChange} required fullWidth select sx={fieldSx}>
                 <MenuItem value="">Select</MenuItem>
                 <MenuItem value="Primary">Primary (1–5)</MenuItem>
@@ -285,7 +285,7 @@ export default function SchoolRegisterPage() {
                 <MenuItem value="Senior Secondary">Senior Secondary (11–12)</MenuItem>
               </TextField>
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} md={6}>
               <TextField label="Board" name="board" value={formData.board} onChange={handleChange} required fullWidth select sx={fieldSx}>
                 <MenuItem value="">Select</MenuItem>
                 <MenuItem value="CBSE">CBSE</MenuItem>
@@ -295,7 +295,7 @@ export default function SchoolRegisterPage() {
                 <MenuItem value="Other">Other</MenuItem>
               </TextField>
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12}>
               <TextField label="Strength" name="strength" type="number" placeholder="1500" value={formData.strength} onChange={handleChange} fullWidth sx={fieldSx} helperText="Number of students" />
             </Grid>
           </Grid>
