@@ -51,6 +51,19 @@ const BCRYPT_ROUNDS = 12;
  * sendRegistrationOTPs — Sends OTPs to email and/or phone.
  */
 async function sendRegistrationOTPs(data) {
+  // Block already-registered emails early
+  if (data.email) {
+    const existingUser = await prisma.user.findFirst({
+      where: { email: data.email, deletedAt: null },
+    });
+    if (existingUser) {
+      throw ApiError.conflict(
+        'This email is already registered. Please log in instead.',
+        'EMAIL_EXISTS'
+      );
+    }
+  }
+
   const promises = [];
   
   if (data.email) {
@@ -73,25 +86,21 @@ async function sendRegistrationOTPs(data) {
  * verifyRegistrationOTPs — Verifies OTPs and caches the verified status.
  */
 async function verifyRegistrationOTPs(data) {
-  if (!data.isGoogleAuth) {
-    if (!data.emailOtp) throw ApiError.badRequest('Email OTP is required.', 'OTP_REQUIRED');
+  // Email OTP verification
+  if (data.emailOtp && data.email) {
     const emailResult = await otpService.verifyOTP(data.email, 'register', data.emailOtp);
     if (!emailResult.valid) throw ApiError.badRequest(emailResult.error, 'OTP_INVALID');
+    await redis.set(`verified_contact:${data.email}:email`, 'true', 'EX', 1800);
   }
 
-  if (!data.phoneOtp) throw ApiError.badRequest('Phone OTP is required.', 'OTP_REQUIRED');
-  const phoneResult = await otpService.verifyOTP(data.phone, 'register', data.phoneOtp);
-  if (!phoneResult.valid) throw ApiError.badRequest(phoneResult.error, 'OTP_INVALID');
-
-  if (data.isGoogleAuth) {
-    // For Google auth, email is already verified. We just verify phone.
-    await redis.set(`verified_contact:${data.phone}`, 'true', 'EX', 1800);
-  } else {
-    // Mark both as verified together
-    await redis.set(`verified_contact:${data.email}:${data.phone}`, 'true', 'EX', 1800);
+  // Phone OTP verification
+  if (data.phoneOtp && data.phone) {
+    const phoneResult = await otpService.verifyOTP(data.phone, 'register', data.phoneOtp);
+    if (!phoneResult.valid) throw ApiError.badRequest(phoneResult.error, 'OTP_INVALID');
+    await redis.set(`verified_contact:${data.phone}:phone`, 'true', 'EX', 1800);
   }
 
-  return { message: 'Contacts verified successfully.' };
+  return { message: 'Verification successful.' };
 }
 
 /**
@@ -144,20 +153,17 @@ async function registerSchool(data) {
     );
   }
 
-  // --- Ensure contacts were verified ---
-  let isEmailVerified = false;
-  let isPhoneVerified = false;
+  // --- Ensure both email AND phone were verified ---
+  const isEmailVerified = data.isGoogleAuth
+    ? await redis.get(`verified_contact:${data.email}:google`)
+    : await redis.get(`verified_contact:${data.email}:email`);
+  const isPhoneVerified = await redis.get(`verified_contact:${data.phone}:phone`);
 
-  if (data.isGoogleAuth) {
-    isEmailVerified = await redis.get(`verified_contact:${data.email}:google`);
-    isPhoneVerified = await redis.get(`verified_contact:${data.phone}`);
-  } else {
-    isEmailVerified = await redis.get(`verified_contact:${data.email}:${data.phone}`);
-    isPhoneVerified = isEmailVerified;
+  if (!isEmailVerified) {
+    throw ApiError.forbidden('Email not verified or session expired. Please verify again.', 'NOT_VERIFIED');
   }
-
-  if (!isEmailVerified || !isPhoneVerified) {
-    throw ApiError.forbidden('Contacts not verified or session expired. Please verify again.', 'NOT_VERIFIED');
+  if (!isPhoneVerified) {
+    throw ApiError.forbidden('Phone number not verified. Please verify your phone.', 'PHONE_NOT_VERIFIED');
   }
 
   // --- Step 3: Check free school limit ---
@@ -223,7 +229,7 @@ async function registerSchool(data) {
   });
 
   // Clean up Redis verification state
-  await redis.del(`verified_contact:${data.email}:${data.phone}`);
+  await redis.del(`verified_contact:${data.email}:email`, `verified_contact:${data.email}:google`, `verified_contact:${data.phone}:phone`);
 
   // Email the temporary password to the school
   const mailer = require('../utils/mailer');
@@ -274,20 +280,17 @@ async function registerCandidate(data) {
     );
   }
 
-  // Ensure contacts were verified
-  let isEmailVerified = false;
-  let isPhoneVerified = false;
+  // Ensure both email AND phone were verified
+  const isEmailVerified = data.isGoogleAuth
+    ? await redis.get(`verified_contact:${data.email}:google`)
+    : await redis.get(`verified_contact:${data.email}:email`);
+  const isPhoneVerified = await redis.get(`verified_contact:${data.phone}:phone`);
 
-  if (data.isGoogleAuth) {
-    isEmailVerified = await redis.get(`verified_contact:${data.email}:google`);
-    isPhoneVerified = await redis.get(`verified_contact:${data.phone}`);
-  } else {
-    isEmailVerified = await redis.get(`verified_contact:${data.email}:${data.phone}`);
-    isPhoneVerified = isEmailVerified;
+  if (!isEmailVerified) {
+    throw ApiError.forbidden('Email not verified or session expired. Please verify again.', 'NOT_VERIFIED');
   }
-
-  if (!isEmailVerified || !isPhoneVerified) {
-    throw ApiError.forbidden('Contacts not verified or session expired. Please verify again.', 'NOT_VERIFIED');
+  if (!isPhoneVerified) {
+    throw ApiError.forbidden('Phone number not verified. Please verify your phone.', 'PHONE_NOT_VERIFIED');
   }
 
   // Hash the password (candidate sets their own)
@@ -328,7 +331,7 @@ async function registerCandidate(data) {
   });
 
   // Clean up Redis verification state
-  await redis.del(`verified_contact:${data.email}:${data.phone}`);
+  await redis.del(`verified_contact:${data.email}:email`, `verified_contact:${data.email}:google`, `verified_contact:${data.phone}:phone`);
 
   logger.info(`Candidate registered & verified: ${data.name} (${logger.maskEmail(data.email)})`);
 
@@ -396,11 +399,23 @@ async function googleInit(token) {
   try {
     const { email, name } = await resolveGoogleToken(token);
 
+    // Block already-registered emails early
+    const existingUser = await prisma.user.findFirst({
+      where: { email, deletedAt: null },
+    });
+    if (existingUser) {
+      throw ApiError.conflict(
+        'This email is already registered. Please log in instead.',
+        'EMAIL_EXISTS'
+      );
+    }
+
     // Cache the email as verified for 30 minutes
     await redis.set(`verified_contact:${email}:google`, 'true', 'EX', 1800);
 
     return { email, name, message: 'Google authentication successful. Please verify your phone number to continue.' };
   } catch (error) {
+    if (error.statusCode) throw error; // Re-throw ApiErrors (like EMAIL_EXISTS)
     logger.error('Google Auth verification failed: ' + error.message);
     throw ApiError.unauthorized('Invalid Google token.');
   }
