@@ -262,14 +262,16 @@ export default function CandidateRegisterPage() {
 
             {/* Inline Phone Verification */}
             <Grid item xs={12}><Divider sx={{ my: 0.5 }}><Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 600 }}>PHONE VERIFICATION</Typography></Divider></Grid>
-            <Grid item xs={12}>
-              <Box sx={{ bgcolor: '#FFFBEB', p: 2, borderRadius: '12px', border: '1px solid #FDE68A' }}>
-                <Typography variant="body2" sx={{ color: '#92400E' }}>
-                  📱 Verify your phone number to proceed. This will be your login phone.
-                </Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={12} sm={6}>
+            {!isPhoneVerified && (
+              <Grid item xs={12}>
+                <Box sx={{ bgcolor: '#FFFBEB', p: 2, borderRadius: '12px', border: '1px solid #FDE68A' }}>
+                  <Typography variant="body2" sx={{ color: '#92400E' }}>
+                    📱 Verify your phone number to proceed. This will be your login phone.
+                  </Typography>
+                </Box>
+              </Grid>
+            )}
+            <Grid item xs={12} sm={isPhoneVerified ? 12 : 6}>
               <TextField
                 label="Phone Number"
                 name="phone"

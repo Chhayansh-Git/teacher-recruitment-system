@@ -230,14 +230,16 @@ export default function SchoolRegisterPage() {
         return (
           <Grid container spacing={2.5}>
             {/* Phone with inline verification */}
-            <Grid item xs={12}>
-              <Box sx={{ bgcolor: '#FFFBEB', p: 2, borderRadius: '12px', border: '1px solid #FDE68A', mb: 1 }}>
-                <Typography variant="body2" sx={{ color: '#92400E' }}>
-                  📱 Please verify your phone number to complete registration.
-                </Typography>
-              </Box>
-            </Grid>
-            <Grid item xs={12} sm={6}>
+            {!isPhoneVerified && (
+              <Grid item xs={12}>
+                <Box sx={{ bgcolor: '#FFFBEB', p: 2, borderRadius: '12px', border: '1px solid #FDE68A', mb: 1 }}>
+                  <Typography variant="body2" sx={{ color: '#92400E' }}>
+                    📱 Please verify your phone number to complete registration.
+                  </Typography>
+                </Box>
+              </Grid>
+            )}
+            <Grid item xs={12} sm={isPhoneVerified ? 12 : 6}>
               <TextField
                 label="Phone Number"
                 name="phone"

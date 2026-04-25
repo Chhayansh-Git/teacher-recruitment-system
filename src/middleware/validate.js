@@ -67,38 +67,24 @@ const validate = (schema) => {
     // Example: { "email": "test@test.com", "password": "abc" }
     if (schema.body) {
       const result = schema.body.safeParse(req.body);
-      // safeParse returns { success: true, data: {...} } or { success: false, error: {...} }
-      // Unlike .parse(), safeParse doesn't THROW an error — it returns it.
-      // This lets us collect errors from body, query, AND params before responding.
 
       if (!result.success) {
-        // result.error.errors is an array of validation failures:
-        // [{ path: ["email"], message: "Invalid email" }, ...]
         errors.push(
-          ...result.error.errors.map((err) => ({
-            field: err.path.join('.'), // ["qualifications", 0, "degree"] → "qualifications.0.degree"
-            message: err.message, // "Expected string, received number"
+          ...result.error.issues.map((err) => ({
+            field: err.path.join('.'),
+            message: err.message,
           }))
         );
       } else {
-        // Replace req.body with the PARSED data.
-        // WHY? Zod can transform data during parsing:
-        // - .trim() removes whitespace
-        // - .default() adds missing defaults
-        // - .transform() applies custom transformations
-        // By replacing req.body, the controller gets clean, validated data.
         req.body = result.data;
       }
     }
 
-    // --- Validate query parameters ---
-    // req.query contains URL query parameters
-    // Example: GET /candidates?page=2&limit=20 → { page: "2", limit: "20" }
     if (schema.query) {
       const result = schema.query.safeParse(req.query);
       if (!result.success) {
         errors.push(
-          ...result.error.errors.map((err) => ({
+          ...result.error.issues.map((err) => ({
             field: `query.${err.path.join('.')}`,
             message: err.message,
           }))
@@ -115,7 +101,7 @@ const validate = (schema) => {
       const result = schema.params.safeParse(req.params);
       if (!result.success) {
         errors.push(
-          ...result.error.errors.map((err) => ({
+          ...result.error.issues.map((err) => ({
             field: `params.${err.path.join('.')}`,
             message: err.message,
           }))

@@ -93,6 +93,7 @@ const schoolRegisterSchema = {
     // Personal/login fields
     email: z.string().email('Please provide a valid email address').trim().toLowerCase(),
     phone: phoneSchema,
+    isGoogleAuth: z.boolean().optional(),
 
     // School details
     schoolName: z.string().min(2, 'School name must be at least 2 characters').max(200).trim(),
@@ -127,6 +128,7 @@ const candidateRegisterSchema = {
     email: z.string().email('Please provide a valid email address').trim().toLowerCase(),
     phone: phoneSchema,
     password: passwordSchema,
+    isGoogleAuth: z.boolean().optional(),
 
     // Profile details
     name: z.string().min(2, 'Name must be at least 2 characters').max(200).trim(),
@@ -188,10 +190,11 @@ const loginSchema = {
 /** OTP Verification */
 const verifyOtpSchema = {
   body: z.object({
-    email: z.string().email().trim().toLowerCase(),
-    phone: phoneSchema,
-    emailOtp: z.string().length(6, 'OTP must be exactly 6 digits'),
-    phoneOtp: z.string().length(6, 'OTP must be exactly 6 digits'),
+    email: z.string().email().trim().toLowerCase().optional(),
+    phone: phoneSchema.optional(),
+    emailOtp: z.string().length(6, 'OTP must be exactly 6 digits').optional(),
+    phoneOtp: z.string().length(6, 'OTP must be exactly 6 digits').optional(),
+    isGoogleAuth: z.boolean().optional(),
   }),
 };
 
