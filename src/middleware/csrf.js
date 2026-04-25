@@ -22,7 +22,10 @@ function csrfProtection(req, res, next) {
     '/api/v1/auth/register/school',
     '/api/v1/auth/register/candidate',
     '/api/v1/auth/refresh',
+    '/api/v1/auth/send-otp',
     '/api/v1/auth/verify-otp',
+    '/api/v1/auth/google-init',
+    '/api/v1/auth/google-login',
     '/api/v1/auth/verify-admin-login'
   ];
   if (csrfExemptRoutes.includes(req.originalUrl)) {

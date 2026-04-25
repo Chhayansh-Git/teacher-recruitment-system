@@ -34,7 +34,10 @@ export function AuthProvider({ children }) {
 
   const checkAuth = async () => {
     try {
-      // Try refreshing the token. If it works, the user IS logged in.
+      // 1. Always fetch CSRF token first so that subsequent POSTs succeed
+      await authAPI.getCsrfToken();
+      
+      // 2. Try refreshing the token. If it works, the user IS logged in.
       const res = await authAPI.refresh();
       // After refresh, try to get the profile to populate user data
       // We'll store user data in localStorage as a lightweight cache

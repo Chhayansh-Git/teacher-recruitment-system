@@ -339,29 +339,62 @@ async function registerCandidate(data) {
 }
 
 /**
+ * resolveGoogleToken — Shared helper to extract user info from any Google token.
+ *
+ * Handles TWO token types:
+ *   1. JWT ID Tokens (3 dot-separated segments) — verified via google-auth-library's verifyIdToken().
+ *      Returned by the GoogleLogin component / One Tap.
+ *   2. OAuth Access Tokens (ya29.xxx) — resolved via Google's UserInfo API.
+ *      Returned by useGoogleLogin() with the implicit grant flow.
+ *
+ * Returns: { email, name }
+ */
+async function resolveGoogleToken(token) {
+  // Dev mock: skip real verification when no client ID is configured
+  if (!process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID.startsWith('your_')) {
+    logger.warn('Google Client ID not configured. MOCKING Google Auth success.');
+    return { email: 'mockuser@gmail.com', name: 'Mock User' };
+  }
+
+  const isJwt = token.split('.').length === 3;
+
+  if (isJwt) {
+    // Path A: JWT ID Token — verify signature and audience locally
+    const { OAuth2Client } = require('google-auth-library');
+    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    return { email: payload.email, name: payload.name };
+  }
+
+  // Path B: OAuth Access Token — call Google's UserInfo endpoint
+  const response = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Google UserInfo API returned ${response.status}: ${body}`);
+  }
+
+  const data = await response.json();
+  if (!data.email) {
+    throw new Error('Google UserInfo response missing email.');
+  }
+
+  return { email: data.email, name: data.name || '' };
+}
+
+/**
  * googleInit — Step 1 of Onboarding via Google
  * Verifies Google Token and caches email as VERIFIED.
  */
 async function googleInit(token) {
   try {
-    const { OAuth2Client } = require('google-auth-library');
-    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-    
-    // In dev mode without a real client ID, we might mock this
-    let email, name;
-    if (!process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID.startsWith('your_')) {
-      logger.warn('Google Client ID not configured. MOCKING Google Auth success.');
-      email = 'mockuser@gmail.com';
-      name = 'Mock User';
-    } else {
-      const ticket = await client.verifyIdToken({
-        idToken: token,
-        audience: process.env.GOOGLE_CLIENT_ID,
-      });
-      const payload = ticket.getPayload();
-      email = payload.email;
-      name = payload.name;
-    }
+    const { email, name } = await resolveGoogleToken(token);
 
     // Cache the email as verified for 30 minutes
     await redis.set(`verified_contact:${email}:google`, 'true', 'EX', 1800);
@@ -378,22 +411,7 @@ async function googleInit(token) {
  */
 async function googleLogin(token) {
   try {
-    const { OAuth2Client } = require('google-auth-library');
-    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-    
-    let email, name;
-    if (!process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID.startsWith('your_')) {
-      email = 'mockuser@gmail.com';
-      name = 'Mock User';
-    } else {
-      const ticket = await client.verifyIdToken({
-        idToken: token,
-        audience: process.env.GOOGLE_CLIENT_ID,
-      });
-      const payload = ticket.getPayload();
-      email = payload.email;
-      name = payload.name;
-    }
+    const { email, name } = await resolveGoogleToken(token);
 
     const user = await prisma.user.findFirst({
       where: { email, deletedAt: null },
