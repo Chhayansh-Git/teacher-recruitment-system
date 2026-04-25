@@ -22,7 +22,7 @@ By handling the entire recruitment pipeline—from AI-driven matching and secure
 - 🧠 **Smart Matching Engine**: Automatically scores and ranks candidates against school requirements based on qualifications, experience, and salary expectations.
 - 🔒 **Privacy-First Architecture**: Proprietary `Contact Leak Detector` intercepts and flags messages containing phone numbers, emails, or links to enforce platform integrity.
 - 💬 **Secure Real-Time Chat**: Built-in messaging system (via Socket.io) allowing schools and candidates to communicate securely.
-- 📹 **Integrated Interviews**: WebRTC-powered, host-controlled video interviewing system directly within the platform.
+- 📹 **Integrated Interviews [Coming Soon]**: WebRTC-powered video interviewing system. *(Note: This feature is currently under construction as it requires the setup of a dedicated signaling and TURN/STUN server architecture. Please use external services like Google Meet or Zoom for interviews in the meantime.)*
 - ⏳ **Automated Pipeline Management**: 7-day auto-release policies, 1-year placement lock-ins, and automated state transitions.
 - 🔐 **Advanced Security**: Instagram-style trusted device recognition, 2FA for Admins, Session Revocation, CSRF protection, and strictly tailored Content Security Policies (CSP).
 - 💳 **Seamless Payments**: Razorpay integration for school registration fees, fully configurable via the Admin dashboard.

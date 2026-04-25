@@ -218,7 +218,80 @@ const revokeSession = asyncHandler(async (req, res) => {
   res.json(ApiResponse.success(null, 'Session revoked'));
 });
 
+/**
+ * POST /api/v1/auth/send-otp
+ *
+ * Send OTPs for registration.
+ */
+const sendRegistrationOTPs = asyncHandler(async (req, res) => {
+  const result = await authService.sendRegistrationOTPs(req.body);
+  res.status(200).json(ApiResponse.success(result));
+});
+
+/**
+ * POST /api/v1/auth/verify-otp
+ *
+ * Verify OTPs and cache verification status.
+ */
+const verifyRegistrationOTPs = asyncHandler(async (req, res) => {
+  const result = await authService.verifyRegistrationOTPs(req.body);
+  res.status(200).json(ApiResponse.success(result));
+});
+
+/**
+ * POST /api/v1/auth/google-init
+ *
+ * Step 1 of Google Registration. Verifies Google token and caches email.
+ */
+const googleInit = asyncHandler(async (req, res) => {
+  const { token } = req.body;
+  if (!token) return res.status(400).json(ApiResponse.error('Google token is required.'));
+
+  const result = await authService.googleInit(token);
+  res.status(200).json(ApiResponse.success(result));
+});
+
+/**
+ * POST /api/v1/auth/google-login
+ *
+ * Log in with Google Token.
+ */
+const googleLogin = asyncHandler(async (req, res) => {
+  const { token } = req.body;
+  if (!token) {
+    return res.status(400).json(ApiResponse.error('Google token is required.'));
+  }
+
+  const result = await authService.googleLogin(token);
+
+  if (result.isNewUser) {
+    return res.status(200).json(
+      ApiResponse.success(
+        { isNewUser: true, email: result.email, name: result.name },
+        'Account not found. Please register to continue.'
+      )
+    );
+  }
+
+  tokenService.setTokenCookies(res, result.accessToken, result.refreshToken);
+  setCsrfCookie(res);
+
+  res.status(200).json(
+    ApiResponse.success(
+      {
+        user: result.user,
+        requirePasswordChange: false,
+      },
+      'Login successful'
+    )
+  );
+});
+
 module.exports = {
+  sendRegistrationOTPs,
+  verifyRegistrationOTPs,
+  googleInit,
+  googleLogin,
   registerSchool,
   registerCandidate,
   verifyOtp,

@@ -1,10 +1,29 @@
 'use client';
+/**
+ * Settings Page — Wellfound-inspired account settings.
+ * GUARDRAIL: ALL API logic, togglePreference, handleRevokeSession preserved exactly.
+ * Only the JSX return() block is redesigned with MUI components.
+ */
 import { useState, useEffect } from 'react';
 import { notificationAPI, authAPI } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Link from 'next/link';
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Button,
+  Switch,
+  Stack,
+  Divider,
+  Chip,
+  CircularProgress,
+} from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import DevicesIcon from '@mui/icons-material/Devices';
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -55,133 +74,122 @@ export default function SettingsPage() {
     }
   };
 
-  if (loading) return <div className="loading-page"><div className="spinner spinner-lg"></div></div>;
+  if (loading) return (
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+      <CircularProgress size={40} sx={{ color: '#2563EB' }} />
+    </Box>
+  );
+
+  const backHref = user?.role === 'ADMIN' ? '/admin' : user?.role === 'SCHOOL' ? '/school' : '/candidate';
+
+  const notificationSettings = [
+    { key: 'email', title: 'Email Notifications', desc: 'Receive updates and alerts via email' },
+    { key: 'sms', title: 'SMS Notifications', desc: 'Receive critical alerts via SMS' },
+    { key: 'inApp', title: 'In-App Notifications', desc: 'Show bell icon alerts inside the application' },
+  ];
 
   return (
     <ProtectedRoute>
-      <div className="topbar">
-        <div className="topbar-left">
-          {user?.role === 'ADMIN' && <Link href="/admin" className="btn btn-ghost btn-sm">← Back</Link>}
-          {user?.role === 'SCHOOL' && <Link href="/school" className="btn btn-ghost btn-sm">← Back</Link>}
-          {user?.role === 'CANDIDATE' && <Link href="/candidate" className="btn btn-ghost btn-sm">← Back</Link>}
-          <h1>Account Settings</h1>
-        </div>
-      </div>
-      
-      <div className="page-content" style={{ maxWidth: '800px', margin: '0 auto' }}>
-        
+      <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 800, mx: 'auto' }}>
+        {/* Page Header */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 4 }}>
+          <Button
+            component={Link}
+            href={backHref}
+            startIcon={<ArrowBackIcon sx={{ fontSize: 16 }} />}
+            size="small"
+            sx={{ color: 'text.secondary', fontWeight: 600, mr: 1 }}
+          >
+            Back
+          </Button>
+          <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary' }}>
+            Account Settings
+          </Typography>
+        </Box>
+
         {/* Notification Preferences */}
-        <div className="card" style={{ marginBottom: 'var(--space-xl)' }}>
-          <h3 className="card-title" style={{ marginBottom: 'var(--space-lg)' }}>Notification Preferences</h3>
-          {preferences && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', backgroundColor: 'var(--surface-sunken)', borderRadius: '8px' }}>
-                <div>
-                  <div style={{ fontWeight: 600 }}>Email Notifications</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>Receive updates and alerts via email</div>
-                </div>
-                <label className="toggle-switch">
-                  <input type="checkbox" checked={preferences.email} onChange={() => togglePreference('email')} />
-                  <span className="slider"></span>
-                </label>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', backgroundColor: 'var(--surface-sunken)', borderRadius: '8px' }}>
-                <div>
-                  <div style={{ fontWeight: 600 }}>SMS Notifications</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>Receive critical alerts via SMS</div>
-                </div>
-                <label className="toggle-switch">
-                  <input type="checkbox" checked={preferences.sms} onChange={() => togglePreference('sms')} />
-                  <span className="slider"></span>
-                </label>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', backgroundColor: 'var(--surface-sunken)', borderRadius: '8px' }}>
-                <div>
-                  <div style={{ fontWeight: 600 }}>In-App Notifications</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-tertiary)' }}>Show bell icon alerts inside the application</div>
-                </div>
-                <label className="toggle-switch">
-                  <input type="checkbox" checked={preferences.inApp} onChange={() => togglePreference('inApp')} />
-                  <span className="slider"></span>
-                </label>
-              </div>
-            </div>
-          )}
-        </div>
+        <Card variant="outlined" elevation={0} sx={{ borderColor: 'divider', borderRadius: '12px', mb: 3 }}>
+          <CardContent sx={{ p: 3 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '1rem', mb: 2.5 }}>
+              Notification Preferences
+            </Typography>
+            {preferences && (
+              <Stack spacing={0} divider={<Divider />}>
+                {notificationSettings.map(({ key, title, desc }) => (
+                  <Box key={key} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 2 }}>
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>{title}</Typography>
+                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>{desc}</Typography>
+                    </Box>
+                    <Switch
+                      checked={preferences[key]}
+                      onChange={() => togglePreference(key)}
+                      sx={{
+                        '& .MuiSwitch-switchBase.Mui-checked': { color: '#2563EB' },
+                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { bgcolor: '#93C5FD' },
+                      }}
+                    />
+                  </Box>
+                ))}
+              </Stack>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Active Sessions */}
-        <div className="card" style={{ marginBottom: 'var(--space-xl)' }}>
-          <h3 className="card-title" style={{ marginBottom: 'var(--space-lg)' }}>Active Sessions</h3>
-          <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: 'var(--space-lg)' }}>
-            These devices are currently logged into your account. Revoke any sessions you do not recognize.
-          </p>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {sessions.map(session => (
-              <div key={session.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
-                <div>
-                  <div style={{ fontWeight: 600 }}>{session.userAgent || 'Unknown Device'}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-tertiary)', marginTop: '4px' }}>
-                    IP: {session.ipAddress} • Started: {new Date(session.createdAt).toLocaleDateString()}
-                  </div>
-                </div>
-                <button 
-                  onClick={() => handleRevokeSession(session.id)}
-                  className="btn btn-secondary btn-sm"
-                  style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}
+        <Card variant="outlined" elevation={0} sx={{ borderColor: 'divider', borderRadius: '12px' }}>
+          <CardContent sx={{ p: 3 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '1rem', mb: 0.5 }}>
+              Active Sessions
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2.5 }}>
+              These devices are currently logged into your account. Revoke any sessions you do not recognize.
+            </Typography>
+
+            <Stack spacing={1.5}>
+              {sessions.map(session => (
+                <Box
+                  key={session.id}
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    p: 2,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: '8px',
+                  }}
                 >
-                  Revoke
-                </button>
-              </div>
-            ))}
-            {sessions.length === 0 && (
-              <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-tertiary)' }}>No active remote sessions.</div>
-            )}
-          </div>
-        </div>
-
-      </div>
-
-      <style jsx>{`
-        .toggle-switch {
-          position: relative;
-          display: inline-block;
-          width: 44px;
-          height: 24px;
-        }
-        .toggle-switch input {
-          opacity: 0;
-          width: 0;
-          height: 0;
-        }
-        .slider {
-          position: absolute;
-          cursor: pointer;
-          top: 0; left: 0; right: 0; bottom: 0;
-          background-color: #ccc;
-          transition: .4s;
-          border-radius: 24px;
-        }
-        .slider:before {
-          position: absolute;
-          content: "";
-          height: 18px;
-          width: 18px;
-          left: 3px;
-          bottom: 3px;
-          background-color: white;
-          transition: .4s;
-          border-radius: 50%;
-        }
-        input:checked + .slider {
-          background-color: var(--primary);
-        }
-        input:checked + .slider:before {
-          transform: translateX(20px);
-        }
-      `}</style>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                    <DevicesIcon sx={{ color: 'text.secondary', fontSize: 20, mt: 0.25 }} />
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', fontSize: '0.85rem' }}>
+                        {session.userAgent || 'Unknown Device'}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                        IP: {session.ipAddress} • Started: {new Date(session.createdAt).toLocaleDateString()}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Button
+                    onClick={() => handleRevokeSession(session.id)}
+                    size="small"
+                    variant="outlined"
+                    sx={{ borderColor: '#FEE2E2', color: '#EF4444', fontWeight: 600, fontSize: '0.75rem', borderRadius: '8px', '&:hover': { borderColor: '#EF4444', bgcolor: '#FEF2F2' } }}
+                  >
+                    Revoke
+                  </Button>
+                </Box>
+              ))}
+              {sessions.length === 0 && (
+                <Box sx={{ py: 3, textAlign: 'center' }}>
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>No active remote sessions.</Typography>
+                </Box>
+              )}
+            </Stack>
+          </CardContent>
+        </Card>
+      </Box>
     </ProtectedRoute>
   );
 }

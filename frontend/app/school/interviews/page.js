@@ -1,8 +1,30 @@
 'use client';
+/**
+ * School Interviews — Wellfound-inspired interview cards.
+ * GUARDRAIL: ALL state logic, API calls, Modal usage, handlers preserved exactly.
+ * Only the JSX return() block is redesigned with MUI components.
+ */
 import { useState, useEffect } from 'react';
 import { interviewAPI } from '@/lib/api';
 import { useToast } from '@/context/ToastContext';
 import Modal from '@/components/Modal';
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Button,
+  Chip,
+  Stack,
+  CircularProgress,
+} from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import SendIcon from '@mui/icons-material/Send';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CancelIcon from '@mui/icons-material/Cancel';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import LinkIcon from '@mui/icons-material/Link';
+import PlaceIcon from '@mui/icons-material/Place';
 
 export default function SchoolInterviewsPage() {
   const toast = useToast();
@@ -67,55 +89,113 @@ export default function SchoolInterviewsPage() {
     } catch (err) { toast.error(err.message); }
   };
 
-  return (
-    <>
-      <div className="topbar">
-        <div className="topbar-left"><h1>Interviews</h1></div>
-        <div className="topbar-right">
-          <button className="btn btn-primary btn-sm" onClick={() => setShowSchedule(true)}>+ Schedule Interview</button>
-        </div>
-      </div>
+  const getStatusColor = (status) => {
+    switch(status) {
+      case 'SCHEDULED': return { bg: '#FEF3C7', color: '#92400E' };
+      case 'INVITED': return { bg: '#DBEAFE', color: '#2563EB' };
+      case 'COMPLETED': return { bg: '#D1FAE5', color: '#059669' };
+      default: return { bg: '#F1F5F9', color: '#64748B' };
+    }
+  };
 
-      <div className="page-content">
-        {loading ? <div className="loading-page"><div className="spinner spinner-lg"></div></div> :
-          interviews.length === 0 ? (
-            <div className="empty-state">
-              <div className="icon">📅</div>
-              <h3>No Upcoming Interviews</h3>
-              <p>Schedule interviews for candidates in your active pipelines.</p>
-            </div>
-          ) : (
-            <div style={{ display: 'grid', gap: 'var(--space-md)' }}>
-              {interviews.map((iv) => (
-                <div key={iv.id} className="card" style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 'var(--space-lg)', alignItems: 'center' }}>
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginBottom: 'var(--space-xs)' }}>
-                      <strong>{iv.pipeline?.candidate?.name || 'Candidate'}</strong>
-                      <span className={`badge ${iv.status === 'SCHEDULED' ? 'badge-yellow' : iv.status === 'INVITED' ? 'badge-blue' : iv.status === 'COMPLETED' ? 'badge-green' : 'badge-grey'}`}>
-                        {iv.status}
-                      </span>
-                      <span className="badge badge-grey">{iv.mode}</span>
-                    </div>
-                    <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>
-                      {iv.pipeline?.candidate?.primaryRole || 'Role not specified'}
-                    </div>
-                    <div style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-xs)' }}>
-                      <strong>📅</strong> {new Date(iv.scheduledAt).toLocaleDateString()} at {new Date(iv.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      <span style={{ color: 'var(--text-tertiary)', marginLeft: 'var(--space-sm)' }}>({iv.duration} min)</span>
-                    </div>
-                    {iv.location && <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>📍 {iv.location}</div>}
-                    {iv.meetingLink && <div style={{ fontSize: 'var(--text-xs)' }}><a href={iv.meetingLink} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--blue-600)' }}>🔗 Meeting Link</a></div>}
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
-                    {!iv.inviteSent && iv.status === 'SCHEDULED' && <button className="btn btn-primary btn-sm" onClick={() => handleSendInvite(iv.id)}>📧 Send Invite</button>}
-                    {['SCHEDULED', 'INVITED'].includes(iv.status) && <button className="btn btn-secondary btn-sm" onClick={() => handleComplete(iv.id)}>✓ Complete</button>}
-                    {['SCHEDULED', 'INVITED'].includes(iv.status) && <button className="btn btn-ghost btn-sm" style={{ color: 'var(--danger)' }} onClick={() => handleCancel(iv.id)}>✕ Cancel</button>}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-      </div>
+  return (
+    <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 1200, mx: 'auto' }}>
+      {/* Page Header */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary' }}>
+          Interviews
+        </Typography>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => setShowSchedule(true)}
+          sx={{ borderRadius: '8px', fontWeight: 600, px: 3 }}
+        >
+          Schedule Interview
+        </Button>
+      </Box>
+
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+          <CircularProgress size={40} sx={{ color: '#2563EB' }} />
+        </Box>
+      ) : interviews.length === 0 ? (
+        <Card variant="outlined" elevation={0} sx={{ borderColor: 'divider', borderRadius: '12px' }}>
+          <CardContent sx={{ py: 8, textAlign: 'center' }}>
+            <Box sx={{ fontSize: '2.5rem', mb: 1.5 }}>📅</Box>
+            <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary', mb: 0.5 }}>
+              No Upcoming Interviews
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'text.secondary', maxWidth: 400, mx: 'auto' }}>
+              Schedule interviews for candidates in your active pipelines.
+            </Typography>
+          </CardContent>
+        </Card>
+      ) : (
+        <Stack spacing={2}>
+          {interviews.map((iv) => {
+            const sc = getStatusColor(iv.status);
+            return (
+              <Card key={iv.id} variant="outlined" elevation={0} sx={{ borderColor: 'divider', borderRadius: '12px' }}>
+                <CardContent sx={{ p: 3 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, flexWrap: { xs: 'wrap', md: 'nowrap' } }}>
+                    {/* Left: Info */}
+                    <Box sx={{ flex: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, flexWrap: 'wrap' }}>
+                        <Typography variant="body1" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                          {iv.pipeline?.candidate?.name || 'Candidate'}
+                        </Typography>
+                        <Chip label={iv.status} size="small" sx={{ fontWeight: 600, fontSize: '0.65rem', height: 22, bgcolor: sc.bg, color: sc.color }} />
+                        <Chip label={iv.mode} size="small" variant="outlined" sx={{ fontWeight: 500, fontSize: '0.65rem', height: 22, borderColor: 'divider' }} />
+                      </Box>
+                      <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1 }}>
+                        {iv.pipeline?.candidate?.primaryRole || 'Role not specified'}
+                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.5 }}>
+                        <CalendarTodayIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                        <Typography variant="body2" sx={{ fontSize: '0.85rem' }}>
+                          {new Date(iv.scheduledAt).toLocaleDateString()} at {new Date(iv.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          <Typography component="span" variant="caption" sx={{ color: 'text.secondary', ml: 1 }}>({iv.duration} min)</Typography>
+                        </Typography>
+                      </Box>
+                      {iv.location && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                          <PlaceIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                          <Typography variant="caption" sx={{ color: 'text.secondary' }}>{iv.location}</Typography>
+                        </Box>
+                      )}
+                      {iv.meetingLink && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                          <LinkIcon sx={{ fontSize: 14, color: '#2563EB' }} />
+                          <a href={iv.meetingLink} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.8rem', color: '#2563EB', textDecoration: 'none', fontWeight: 500 }}>Meeting Link</a>
+                        </Box>
+                      )}
+                    </Box>
+                    {/* Right: Actions */}
+                    <Stack spacing={0.75} sx={{ flexShrink: 0 }}>
+                      {!iv.inviteSent && iv.status === 'SCHEDULED' && (
+                        <Button size="small" variant="contained" startIcon={<SendIcon sx={{ fontSize: 14 }} />} onClick={() => handleSendInvite(iv.id)} sx={{ borderRadius: '8px', fontWeight: 600, fontSize: '0.75rem' }}>
+                          Send Invite
+                        </Button>
+                      )}
+                      {['SCHEDULED', 'INVITED'].includes(iv.status) && (
+                        <Button size="small" variant="outlined" startIcon={<CheckCircleIcon sx={{ fontSize: 14 }} />} onClick={() => handleComplete(iv.id)} sx={{ borderColor: 'divider', color: 'text.primary', borderRadius: '8px', fontWeight: 600, fontSize: '0.75rem' }}>
+                          Complete
+                        </Button>
+                      )}
+                      {['SCHEDULED', 'INVITED'].includes(iv.status) && (
+                        <Button size="small" startIcon={<CancelIcon sx={{ fontSize: 14 }} />} onClick={() => handleCancel(iv.id)} sx={{ color: '#EF4444', fontWeight: 600, fontSize: '0.75rem' }}>
+                          Cancel
+                        </Button>
+                      )}
+                    </Stack>
+                  </Box>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </Stack>
+      )}
 
       <Modal
         isOpen={showSchedule}
@@ -139,6 +219,6 @@ export default function SchoolInterviewsPage() {
         <div className="form-group"><label className="form-label">Meeting Link (for video)</label><input name="meetingLink" className="form-input" value={formData.meetingLink} onChange={handleChange} /></div>
         <div className="form-group"><label className="form-label">Notes</label><textarea name="notes" className="form-textarea" value={formData.notes} onChange={handleChange} /></div>
       </Modal>
-    </>
+    </Box>
   );
 }

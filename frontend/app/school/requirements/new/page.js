@@ -1,8 +1,27 @@
 'use client';
+/**
+ * New Requirement Form — Wellfound-inspired MUI form.
+ * GUARDRAIL: ALL state logic, API calls, form data processing preserved exactly.
+ * Only the JSX return() block is redesigned with MUI components.
+ */
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { schoolAPI } from '@/lib/api';
 import { useToast } from '@/context/ToastContext';
+import {
+  Box,
+  Card,
+  CardContent,
+  TextField,
+  Button,
+  Typography,
+  Stack,
+  Divider,
+  MenuItem,
+  CircularProgress,
+  Grid,
+} from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 export default function NewRequirementPage() {
   const router = useRouter();
@@ -43,67 +62,85 @@ export default function NewRequirementPage() {
   };
 
   return (
-    <>
-      <div className="topbar"><div className="topbar-left"><h1>New Requirement</h1></div></div>
-      <div className="page-content">
-        <form onSubmit={handleSubmit}>
-          <div className="card" style={{ maxWidth: '720px' }}>
-            <div className="form-group">
-              <label className="form-label">Post / Designation *</label>
-              <input name="postDesignation" className="form-input" placeholder="e.g. PGT Mathematics" value={formData.postDesignation} onChange={handleChange} required />
-            </div>
+    <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 800, mx: 'auto' }}>
+      {/* Page Header */}
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 4 }}>
+        <Button
+          startIcon={<ArrowBackIcon sx={{ fontSize: 16 }} />}
+          size="small"
+          onClick={() => router.back()}
+          sx={{ color: 'text.secondary', fontWeight: 600, mr: 1 }}
+        >
+          Back
+        </Button>
+        <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary' }}>
+          New Requirement
+        </Typography>
+      </Box>
 
-            <div className="form-group">
-              <label className="form-label">Subjects * (comma-separated)</label>
-              <input name="subjects" className="form-input" placeholder="Mathematics, Physics" value={formData.subjects} onChange={handleChange} required />
-            </div>
+      <form onSubmit={handleSubmit}>
+        <Card variant="outlined" elevation={0} sx={{ borderColor: 'divider', borderRadius: '12px' }}>
+          <CardContent sx={{ p: { xs: 3, md: 4 } }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.7rem', mb: 2 }}>
+              Role Details
+            </Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <TextField label="Post / Designation" name="postDesignation" placeholder="e.g. PGT Mathematics" value={formData.postDesignation} onChange={handleChange} required fullWidth />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField label="Subjects (comma-separated)" name="subjects" placeholder="Mathematics, Physics" value={formData.subjects} onChange={handleChange} required fullWidth />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField label="Gender Preference" name="genderPref" value={formData.genderPref} onChange={handleChange} fullWidth select>
+                  <MenuItem value="ANY">Any</MenuItem>
+                  <MenuItem value="MALE">Male</MenuItem>
+                  <MenuItem value="FEMALE">Female</MenuItem>
+                </TextField>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField label="Staff Type" name="staffType" value={formData.staffType} onChange={handleChange} fullWidth select>
+                  <MenuItem value="TEACHING">Teaching</MenuItem>
+                  <MenuItem value="NON_TEACHING">Non-Teaching</MenuItem>
+                  <MenuItem value="BOTH">Both</MenuItem>
+                </TextField>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField label="Count Needed" name="countNeeded" type="number" value={formData.countNeeded} onChange={handleChange} required fullWidth InputProps={{ inputProps: { min: 1 } }} />
+              </Grid>
+            </Grid>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
-              <div className="form-group">
-                <label className="form-label">Gender Preference</label>
-                <select name="genderPref" className="form-select" value={formData.genderPref} onChange={handleChange}>
-                  <option value="ANY">Any</option><option value="MALE">Male</option><option value="FEMALE">Female</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Staff Type</label>
-                <select name="staffType" className="form-select" value={formData.staffType} onChange={handleChange}>
-                  <option value="TEACHING">Teaching</option><option value="NON_TEACHING">Non-Teaching</option><option value="BOTH">Both</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label className="form-label">Count Needed *</label>
-                <input name="countNeeded" type="number" className="form-input" min="1" value={formData.countNeeded} onChange={handleChange} required />
-              </div>
-            </div>
+            <Divider sx={{ my: 4 }} />
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1.618fr 1fr 1fr', gap: '1rem' }}>
-              <div className="form-group">
-                <label className="form-label">Required Qualification *</label>
-                <input name="qualification" className="form-input" placeholder="B.Ed., M.Sc." value={formData.qualification} onChange={handleChange} required />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Min Experience (years)</label>
-                <input name="experienceMin" type="number" className="form-input" min="0" value={formData.experienceMin} onChange={handleChange} />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Salary Offered (₹/month)</label>
-                <input name="salaryOffered" type="number" className="form-input" placeholder="40000" value={formData.salaryOffered} onChange={handleChange} />
-              </div>
-            </div>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.7rem', mb: 2 }}>
+              Qualifications & Compensation
+            </Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={5}>
+                <TextField label="Required Qualification" name="qualification" placeholder="B.Ed., M.Sc." value={formData.qualification} onChange={handleChange} required fullWidth />
+              </Grid>
+              <Grid item xs={12} sm={3}>
+                <TextField label="Min Exp (years)" name="experienceMin" type="number" value={formData.experienceMin} onChange={handleChange} fullWidth InputProps={{ inputProps: { min: 0 } }} />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField label="Salary Offered (₹/mo)" name="salaryOffered" type="number" placeholder="40000" value={formData.salaryOffered} onChange={handleChange} fullWidth />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField label="Description (optional)" name="description" placeholder="Additional details about the position..." value={formData.description} onChange={handleChange} fullWidth multiline rows={4} />
+              </Grid>
+            </Grid>
+          </CardContent>
+        </Card>
 
-            <div className="form-group">
-              <label className="form-label">Description (optional)</label>
-              <textarea name="description" className="form-textarea" placeholder="Additional details about the position..." value={formData.description} onChange={handleChange} />
-            </div>
-
-            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-              <button type="button" className="btn btn-ghost" onClick={() => router.back()}>Cancel</button>
-              <button type="submit" className="btn btn-primary" disabled={submitting}>{submitting ? 'Creating...' : 'Create Requirement'}</button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </>
+        <Box sx={{ display: 'flex', gap: 1.5, justifyContent: 'flex-end', mt: 3 }}>
+          <Button variant="outlined" onClick={() => router.back()} sx={{ borderColor: 'divider', color: 'text.secondary', borderRadius: '8px', fontWeight: 600 }}>
+            Cancel
+          </Button>
+          <Button type="submit" variant="contained" disabled={submitting} sx={{ borderRadius: '8px', fontWeight: 600, minWidth: 160 }}>
+            {submitting ? <CircularProgress size={20} color="inherit" /> : 'Create Requirement'}
+          </Button>
+        </Box>
+      </form>
+    </Box>
   );
 }

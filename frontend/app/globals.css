@@ -146,7 +146,7 @@ a {
   transition: color var(--transition-fast);
 }
 
-a:hover {
+a:hover:not(.btn) {
   color: var(--blue-700);
 }
 

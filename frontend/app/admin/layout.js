@@ -1,4 +1,8 @@
 'use client';
+/**
+ * Admin Layout — Dashboard layout wrapping the admin section.
+ * Uses redesigned Sidebar with MUI components.
+ */
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Sidebar from '@/components/Sidebar';
 
@@ -41,9 +45,9 @@ const adminNav = [
 export default function AdminLayout({ children }) {
   return (
     <ProtectedRoute allowedRoles={['ADMIN']}>
-      <div className="dashboard-layout">
+      <div style={{ display: 'flex', minHeight: '100vh', background: '#F8FAFC' }}>
         <Sidebar navItems={adminNav} brandTitle="Admin Panel" />
-        <main className="main-content">{children}</main>
+        <main style={{ flex: 1, minWidth: 0, overflowY: 'auto' }}>{children}</main>
       </div>
     </ProtectedRoute>
   );

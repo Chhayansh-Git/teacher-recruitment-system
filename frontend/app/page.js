@@ -3,8 +3,12 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Shield, Sparkles, Video, Settings, Activity, CreditCard, ArrowRight, ChevronDown } from 'lucide-react';
+import { useState } from 'react';
 
 export default function LandingPage() {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [loginDropdownOpen, setLoginDropdownOpen] = useState(false);
+
   const fadeUp = {
     hidden: { opacity: 0, y: 30 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } }
@@ -35,25 +39,37 @@ export default function LandingPage() {
             
             <div className="nav-links" style={{ display: 'flex', gap: '32px' }}>
               <Link href="/about" style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600, color: 'var(--grey-600)', fontSize: '0.95rem' }}>
-                Platform <ChevronDown size={14} />
+                Platform
               </Link>
               <Link href="/pricing" style={{ fontWeight: 600, color: 'var(--grey-600)', fontSize: '0.95rem' }}>
                 Pricing
               </Link>
-              <Link href="#" style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600, color: 'var(--grey-600)', fontSize: '0.95rem' }}>
-                For Schools <ChevronDown size={14} />
+              <Link href="/register/school" style={{ display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 600, color: 'var(--grey-600)', fontSize: '0.95rem' }}>
+                For Schools
               </Link>
-              <Link href="#" style={{ fontWeight: 600, color: 'var(--grey-600)', fontSize: '0.95rem' }}>
-                Resources
+              <Link href="/register/candidate" style={{ fontWeight: 600, color: 'var(--grey-600)', fontSize: '0.95rem' }}>
+                For Candidates
               </Link>
             </div>
           </div>
 
           <div className="nav-actions" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <Link href="/login" style={{ fontWeight: 600, color: 'var(--grey-800)', fontSize: '0.95rem' }}>Log In</Link>
-            <div style={{ width: '1px', height: '24px', background: 'var(--border)' }}></div>
-            <Link href="/register/candidate" className="btn btn-ghost" style={{ fontWeight: 600, fontSize: '0.95rem' }}>For Candidates</Link>
-            <Link href="/register/school" className="btn btn-primary" style={{ padding: '0.6rem 1.4rem', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 600, boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)' }}>Hire Talent</Link>
+            
+            <Link 
+              href="/login" 
+              className="btn btn-ghost" 
+              style={{ padding: '0.6rem 1rem', fontSize: '0.95rem', fontWeight: 600, color: 'var(--grey-800)', textDecoration: 'none' }}
+            >
+              Log In
+            </Link>
+
+            <Link 
+              href="/register" 
+              className="btn btn-primary" 
+              style={{ padding: '0.6rem 1.4rem', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 600, boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)', textDecoration: 'none' }}
+            >
+              Sign Up
+            </Link>
           </div>
         </div>
       </nav>
@@ -67,7 +83,7 @@ export default function LandingPage() {
             
             <motion.div variants={fadeUp} style={{ background: 'var(--blue-50)', color: 'var(--blue-700)', padding: '6px 16px', borderRadius: '24px', fontSize: '0.85rem', fontWeight: 600, marginBottom: '32px', display: 'flex', alignItems: 'center', gap: '8px', border: '1px solid var(--blue-100)' }}>
               <span style={{ display: 'inline-block', width: '8px', height: '8px', background: 'var(--blue-600)', borderRadius: '50%' }}></span>
-              Now accepting top 200 institutions for early access
+              Now accepting top institutions
             </motion.div>
 
             <motion.h1 variants={fadeUp} style={{ fontSize: '6rem', fontWeight: 800, letterSpacing: '-0.05em', lineHeight: 1, color: 'var(--grey-900)', maxWidth: '1000px', marginBottom: '32px' }}>
@@ -80,10 +96,10 @@ export default function LandingPage() {
             </motion.p>
             
             <motion.div variants={fadeUp} style={{ display: 'flex', gap: '20px', justifyContent: 'center' }}>
-              <Link href="/register/school" className="btn btn-primary btn-lg" style={{ borderRadius: '12px', padding: '1.2rem 2.5rem', fontSize: '1.1rem', boxShadow: '0 8px 24px -6px rgba(37, 99, 235, 0.4)' }}>
+              <Link href="/register/school" className="btn btn-primary btn-lg" style={{ borderRadius: '12px', padding: '1.2rem 2.5rem', fontSize: '1.1rem', boxShadow: '0 8px 24px -6px rgba(37, 99, 235, 0.4)', textDecoration: 'none' }}>
                 Start Hiring Now
               </Link>
-              <Link href="/register/candidate" className="btn btn-lg" style={{ borderRadius: '12px', padding: '1.2rem 2.5rem', fontSize: '1.1rem', background: 'white', color: 'var(--grey-900)', border: '1px solid var(--border)', transition: 'all 0.2s', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+              <Link href="/register/candidate" className="btn btn-lg" style={{ borderRadius: '12px', padding: '1.2rem 2.5rem', fontSize: '1.1rem', background: 'white', color: 'var(--grey-900)', border: '1px solid var(--border)', transition: 'all 0.2s', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)', textDecoration: 'none' }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--blue-500)'; e.currentTarget.style.boxShadow = '0 0 0 4px rgba(37, 99, 235, 0.1)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.05)'; }}>
                 Apply as Candidate
               </Link>
             </motion.div>
@@ -197,20 +213,27 @@ export default function LandingPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '32px' }}>
             {[
               { title: 'AI Matching', icon: Sparkles, desc: 'Our algorithm scores candidates against your specific requirements instantly.' },
-              { title: 'Built-in Video', icon: Video, desc: 'Host-controlled WebRTC video interviews directly from your dashboard.' },
+              { title: 'Built-in Video', icon: Video, desc: 'Host-controlled WebRTC video interviews directly from your dashboard.', badge: 'Coming Soon' },
               { title: 'Automated Pipelines', icon: Activity, desc: '7-day auto-release policies ensure candidates are never left hanging.' },
               { title: 'Secure Onboarding', icon: Shield, desc: 'Strict admin verification and 2FA ensures only trusted schools enter.' },
               { title: 'Dynamic Trends', icon: Settings, desc: 'Real-time match scores and profile view analytics for candidates.' },
               { title: 'Seamless Payments', icon: CreditCard, desc: 'Integrated Razorpay checkout for instant school registration fee processing.' }
             ].map((feature, i) => (
               <motion.div key={i} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-50px" }} transition={{ duration: 0.5, delay: i * 0.1 }}
-                   style={{ background: 'white', padding: '48px 40px', borderRadius: '32px', border: '1px solid var(--border)', transition: 'transform 0.3s, box-shadow 0.3s' }} 
-                   onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-8px)'; e.currentTarget.style.boxShadow = '0 25px 50px -12px rgba(0,0,0,0.05)'; }}
-                   onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; }}>
+                   style={{ background: 'white', padding: '48px 40px', borderRadius: '32px', border: '1px solid var(--border)', transition: 'transform 0.3s, box-shadow 0.3s, border-color 0.3s' }} 
+                   onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-8px)'; e.currentTarget.style.boxShadow = '0 25px 50px -12px rgba(0,0,0,0.05)'; e.currentTarget.style.borderColor = 'var(--blue-300)'; }}
+                   onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = 'var(--border)'; }}>
                 <div style={{ width: '64px', height: '64px', background: 'var(--blue-50)', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '32px', color: 'var(--blue-600)' }}>
                   <feature.icon size={28} />
                 </div>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--grey-900)', marginBottom: '16px' }}>{feature.title}</h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                  <h3 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--grey-900)', margin: 0 }}>{feature.title}</h3>
+                  {feature.badge && (
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, background: 'var(--blue-100)', color: 'var(--blue-700)', padding: '4px 10px', borderRadius: '12px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      {feature.badge}
+                    </span>
+                  )}
+                </div>
                 <p style={{ color: 'var(--grey-600)', lineHeight: 1.6, fontSize: '1.1rem' }}>{feature.desc}</p>
               </motion.div>
             ))}
@@ -219,18 +242,32 @@ export default function LandingPage() {
       </section>
 
       {/* ---- CTA Section (White Background) ---- */}
-      <section style={{ background: 'white', padding: '160px 0', textAlign: 'center', borderTop: '1px solid var(--border)' }}>
+      <section style={{ background: 'white', padding: '120px 0', borderTop: '1px solid var(--border)' }}>
         <div className="container">
-          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp}>
-            <h2 style={{ fontSize: '4.5rem', fontWeight: 800, color: 'var(--grey-900)', letterSpacing: '-0.04em', marginBottom: '32px' }}>Ready to hire?</h2>
-            <p style={{ fontSize: '1.35rem', color: 'var(--grey-600)', maxWidth: '600px', margin: '0 auto 48px' }}>
-              Join the network of elite institutions redefining educational recruitment today.
-            </p>
-            <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
-              <Link href="/register/school" className="btn btn-primary btn-lg" style={{ borderRadius: '12px', padding: '1.2rem 3rem', fontSize: '1.2rem', boxShadow: '0 8px 24px -6px rgba(37, 99, 235, 0.4)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeUp} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '40px' }}>
+            
+            {/* School CTA */}
+            <div style={{ background: 'var(--blue-50)', padding: '60px', borderRadius: '32px', textAlign: 'center', border: '1px solid var(--blue-100)' }}>
+              <h2 style={{ fontSize: '3.5rem', fontWeight: 800, color: 'var(--blue-900)', letterSpacing: '-0.04em', marginBottom: '24px' }}>Ready to hire?</h2>
+              <p style={{ fontSize: '1.25rem', color: 'var(--blue-700)', marginBottom: '40px' }}>
+                Join the network of elite institutions redefining educational recruitment today.
+              </p>
+              <Link href="/register/school" className="btn btn-primary btn-lg" style={{ borderRadius: '12px', padding: '1.2rem 3rem', fontSize: '1.1rem', boxShadow: '0 8px 24px -6px rgba(37, 99, 235, 0.4)', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
                 Register Your School <ArrowRight size={20} />
               </Link>
             </div>
+
+            {/* Candidate CTA */}
+            <div style={{ background: 'var(--grey-50)', padding: '60px', borderRadius: '32px', textAlign: 'center', border: '1px solid var(--border)' }}>
+              <h2 style={{ fontSize: '3.5rem', fontWeight: 800, color: 'var(--grey-900)', letterSpacing: '-0.04em', marginBottom: '24px' }}>Ready to get hired?</h2>
+              <p style={{ fontSize: '1.25rem', color: 'var(--grey-600)', marginBottom: '40px' }}>
+                Connect with top institutions anonymously. Find your dream teaching role.
+              </p>
+              <Link href="/register/candidate" className="btn btn-lg" style={{ borderRadius: '12px', padding: '1.2rem 3rem', fontSize: '1.1rem', background: 'white', color: 'var(--grey-900)', border: '1px solid var(--border)', display: 'inline-flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }} onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--blue-500)'; e.currentTarget.style.boxShadow = '0 0 0 4px rgba(37, 99, 235, 0.1)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0, 0, 0, 0.05)'; }}>
+                Apply as Candidate <ArrowRight size={20} />
+              </Link>
+            </div>
+
           </motion.div>
         </div>
       </section>
@@ -249,39 +286,34 @@ export default function LandingPage() {
                 Edvance
               </div>
               <p style={{ lineHeight: 1.6, marginBottom: '32px', maxWidth: '300px' }}>
-                The world's most secure and intelligent recruitment ecosystem for educational institutions.
+                The world&apos;s most secure and intelligent recruitment ecosystem for educational institutions.
               </p>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <h4 style={{ color: 'white', fontWeight: 600, fontSize: '1.1rem', marginBottom: '8px' }}>Platform</h4>
-              <Link href="#" style={{ color: 'var(--grey-400)', textDecoration: 'none' }}>Why Edvance</Link>
-              <Link href="/pricing" style={{ color: 'var(--grey-400)', textDecoration: 'none' }}>Pricing</Link>
-              <Link href="/about" style={{ color: 'var(--grey-400)', textDecoration: 'none' }}>About Us</Link>
-              <Link href="#" style={{ color: 'var(--grey-400)', textDecoration: 'none' }}>Careers</Link>
+              <Link href="/about" style={{ color: 'var(--grey-400)', textDecoration: 'none' }} onMouseEnter={(e) => e.currentTarget.style.color = 'white'} onMouseLeave={(e) => e.currentTarget.style.color = 'var(--grey-400)'}>About Us</Link>
+              <Link href="/pricing" style={{ color: 'var(--grey-400)', textDecoration: 'none' }} onMouseEnter={(e) => e.currentTarget.style.color = 'white'} onMouseLeave={(e) => e.currentTarget.style.color = 'var(--grey-400)'}>Pricing</Link>
+              <Link href="/register/school" style={{ color: 'var(--grey-400)', textDecoration: 'none' }} onMouseEnter={(e) => e.currentTarget.style.color = 'white'} onMouseLeave={(e) => e.currentTarget.style.color = 'var(--grey-400)'}>For Schools</Link>
+              <Link href="/register/candidate" style={{ color: 'var(--grey-400)', textDecoration: 'none' }} onMouseEnter={(e) => e.currentTarget.style.color = 'white'} onMouseLeave={(e) => e.currentTarget.style.color = 'var(--grey-400)'}>For Candidates</Link>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <h4 style={{ color: 'white', fontWeight: 600, fontSize: '1.1rem', marginBottom: '8px' }}>For Schools</h4>
-              <Link href="/register/school" style={{ color: 'var(--grey-400)', textDecoration: 'none' }}>Hire Teachers</Link>
-              <Link href="#" style={{ color: 'var(--grey-400)', textDecoration: 'none' }}>Applicant Tracking</Link>
-              <Link href="#" style={{ color: 'var(--grey-400)', textDecoration: 'none' }}>Video Interviews</Link>
-              <Link href="#" style={{ color: 'var(--grey-400)', textDecoration: 'none' }}>Success Stories</Link>
+              <Link href="/register/school" style={{ color: 'var(--grey-400)', textDecoration: 'none' }} onMouseEnter={(e) => e.currentTarget.style.color = 'white'} onMouseLeave={(e) => e.currentTarget.style.color = 'var(--grey-400)'}>Hire Teachers</Link>
+              <Link href="/login" style={{ color: 'var(--grey-400)', textDecoration: 'none' }} onMouseEnter={(e) => e.currentTarget.style.color = 'white'} onMouseLeave={(e) => e.currentTarget.style.color = 'var(--grey-400)'}>School Login</Link>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <h4 style={{ color: 'white', fontWeight: 600, fontSize: '1.1rem', marginBottom: '8px' }}>For Candidates</h4>
-              <Link href="/register/candidate" style={{ color: 'var(--grey-400)', textDecoration: 'none' }}>Find a Job</Link>
-              <Link href="#" style={{ color: 'var(--grey-400)', textDecoration: 'none' }}>Build Profile</Link>
-              <Link href="#" style={{ color: 'var(--grey-400)', textDecoration: 'none' }}>Privacy Policy</Link>
-              <Link href="#" style={{ color: 'var(--grey-400)', textDecoration: 'none' }}>Help Center</Link>
+              <Link href="/register/candidate" style={{ color: 'var(--grey-400)', textDecoration: 'none' }} onMouseEnter={(e) => e.currentTarget.style.color = 'white'} onMouseLeave={(e) => e.currentTarget.style.color = 'var(--grey-400)'}>Find a Job</Link>
+              <Link href="/login" style={{ color: 'var(--grey-400)', textDecoration: 'none' }} onMouseEnter={(e) => e.currentTarget.style.color = 'white'} onMouseLeave={(e) => e.currentTarget.style.color = 'var(--grey-400)'}>Candidate Login</Link>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <h4 style={{ color: 'white', fontWeight: 600, fontSize: '1.1rem', marginBottom: '8px' }}>Legal</h4>
-              <Link href="#" style={{ color: 'var(--grey-400)', textDecoration: 'none' }}>Terms of Service</Link>
-              <Link href="#" style={{ color: 'var(--grey-400)', textDecoration: 'none' }}>Privacy Policy</Link>
-              <Link href="#" style={{ color: 'var(--grey-400)', textDecoration: 'none' }}>Cookie Policy</Link>
+              <Link href="#" style={{ color: 'var(--grey-400)', textDecoration: 'none' }} onMouseEnter={(e) => e.currentTarget.style.color = 'white'} onMouseLeave={(e) => e.currentTarget.style.color = 'var(--grey-400)'}>Terms of Service</Link>
+              <Link href="#" style={{ color: 'var(--grey-400)', textDecoration: 'none' }} onMouseEnter={(e) => e.currentTarget.style.color = 'white'} onMouseLeave={(e) => e.currentTarget.style.color = 'var(--grey-400)'}>Privacy Policy</Link>
             </div>
 
           </div>
@@ -289,7 +321,7 @@ export default function LandingPage() {
           <div style={{ paddingTop: '32px', borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>© {new Date().getFullYear()} Edvance Technologies Inc. All rights reserved.</div>
             <div style={{ display: 'flex', gap: '24px' }}>
-              {/* Social icons could go here */}
+              {/* Social icons */}
               <div style={{ width: '24px', height: '24px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%' }}></div>
               <div style={{ width: '24px', height: '24px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%' }}></div>
               <div style={{ width: '24px', height: '24px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%' }}></div>

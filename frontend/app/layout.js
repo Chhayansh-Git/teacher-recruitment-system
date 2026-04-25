@@ -1,21 +1,27 @@
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import { ToastProvider } from '@/context/ToastContext';
+import ThemeRegistry from '@/components/ThemeRegistry';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
 export const metadata = {
-  title: 'Teacher Recruitment System — Find the Perfect Teaching Talent',
-  description: 'A professional platform connecting schools with qualified teaching candidates. Streamlined recruitment with AI-powered matching, secure communication, and end-to-end pipeline management.',
+  title: 'Edvance — Where Top Schools Meet Verified Educators',
+  description: 'The exclusive recruitment platform for educational institutions. AI-powered matching, secure communication, and integrated video interviews — all in one place.',
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <AuthProvider>
-          <ToastProvider>
-            {children}
-          </ToastProvider>
-        </AuthProvider>
+        <ThemeRegistry>
+          <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || 'dummy-client-id'}>
+            <AuthProvider>
+              <ToastProvider>
+                {children}
+              </ToastProvider>
+            </AuthProvider>
+          </GoogleOAuthProvider>
+        </ThemeRegistry>
       </body>
     </html>
   );

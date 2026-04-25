@@ -1,7 +1,29 @@
 'use client';
+/**
+ * School Profile — Wellfound-inspired flat profile form.
+ * GUARDRAIL: ALL state logic, API calls, handlers preserved exactly.
+ * Only the JSX return() block is redesigned with MUI components.
+ */
 import { useState, useEffect } from 'react';
 import { schoolAPI } from '@/lib/api';
 import { useToast } from '@/context/ToastContext';
+import {
+  Box,
+  Card,
+  CardContent,
+  TextField,
+  Button,
+  Typography,
+  Stack,
+  Divider,
+  MenuItem,
+  Chip,
+  CircularProgress,
+  Grid,
+} from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
+import CloseIcon from '@mui/icons-material/Close';
+import SaveIcon from '@mui/icons-material/Save';
 
 export default function SchoolProfilePage() {
   const toast = useToast();
@@ -51,73 +73,136 @@ export default function SchoolProfilePage() {
     }
   };
 
-  if (loading) return <div className="loading-page"><div className="spinner spinner-lg"></div></div>;
+  if (loading) return (
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+      <CircularProgress size={40} sx={{ color: '#2563EB' }} />
+    </Box>
+  );
 
   return (
-    <>
-      <div className="topbar">
-        <div className="topbar-left"><h1>School Profile</h1></div>
-        <div className="topbar-right">
-          {!editing ? (
-            <button className="btn btn-primary btn-sm" onClick={() => setEditing(true)}>Edit Profile</button>
-          ) : (
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button className="btn btn-ghost btn-sm" onClick={() => { setEditing(false); setFormData(profile); }}>Cancel</button>
-              <button className="btn btn-primary btn-sm" onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save Changes'}</button>
-            </div>
-          )}
-        </div>
-      </div>
+    <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 900, mx: 'auto' }}>
+      {/* Page Header */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary' }}>
+          School Profile
+        </Typography>
+        {!editing ? (
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<EditIcon sx={{ fontSize: 16 }} />}
+            onClick={() => setEditing(true)}
+            sx={{ borderColor: 'divider', color: 'text.primary', fontWeight: 600, borderRadius: '8px' }}
+          >
+            Edit Profile
+          </Button>
+        ) : (
+          <Stack direction="row" spacing={1}>
+            <Button variant="outlined" size="small" startIcon={<CloseIcon sx={{ fontSize: 16 }} />} onClick={() => { setEditing(false); setFormData(profile); }} sx={{ borderColor: 'divider', color: 'text.secondary', borderRadius: '8px' }}>
+              Cancel
+            </Button>
+            <Button variant="contained" size="small" startIcon={<SaveIcon sx={{ fontSize: 16 }} />} onClick={handleSave} disabled={saving} sx={{ borderRadius: '8px', fontWeight: 600 }}>
+              {saving ? 'Saving…' : 'Save Changes'}
+            </Button>
+          </Stack>
+        )}
+      </Box>
 
-      <div className="page-content">
-        <form onSubmit={handleSave}>
-          <div className="card" style={{ maxWidth: '800px' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1.618fr 1fr', gap: '1rem' }}>
-              <div className="form-group">
-                <label className="form-label">School Name</label>
-                <input name="schoolName" className="form-input" value={formData.schoolName || ''} onChange={handleChange} disabled={!editing} />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Affiliation No.</label>
-                <input name="affiliationNo" className="form-input" value={formData.affiliationNo || ''} onChange={handleChange} disabled={!editing} />
-              </div>
-            </div>
-            <div className="form-group">
-              <label className="form-label">Address</label>
-              <input name="address" className="form-input" value={formData.address || ''} onChange={handleChange} disabled={!editing} />
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 0.618fr', gap: '1rem' }}>
-              <div className="form-group"><label className="form-label">City</label><input name="city" className="form-input" value={formData.city || ''} onChange={handleChange} disabled={!editing} /></div>
-              <div className="form-group"><label className="form-label">State</label><input name="state" className="form-input" value={formData.state || ''} onChange={handleChange} disabled={!editing} /></div>
-              <div className="form-group"><label className="form-label">PIN Code</label><input name="pinCode" className="form-input" value={formData.pinCode || ''} onChange={handleChange} disabled={!editing} /></div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.618fr', gap: '1rem' }}>
-              <div className="form-group"><label className="form-label">Contact No.</label><input className="form-input" value={profile?.contactNo || ''} disabled style={{ opacity: 0.6 }} /><span className="form-hint">Contact admin to change</span></div>
-              <div className="form-group"><label className="form-label">Principal Name</label><input name="principalName" className="form-input" value={formData.principalName || ''} onChange={handleChange} disabled={!editing} /></div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 0.618fr', gap: '1rem' }}>
-              <div className="form-group"><label className="form-label">School Level</label>
-                <select name="schoolLevel" className="form-select" value={formData.schoolLevel || ''} onChange={handleChange} disabled={!editing}>
-                  <option value="Primary">Primary</option><option value="Secondary">Secondary</option><option value="Senior Secondary">Senior Secondary</option>
-                </select></div>
-              <div className="form-group"><label className="form-label">Board</label>
-                <select name="board" className="form-select" value={formData.board || ''} onChange={handleChange} disabled={!editing}>
-                  <option value="CBSE">CBSE</option><option value="ICSE">ICSE</option><option value="State Board">State Board</option><option value="IB">IB</option><option value="Other">Other</option>
-                </select></div>
-              <div className="form-group"><label className="form-label">Strength</label><input name="strength" type="number" className="form-input" value={formData.strength || ''} onChange={handleChange} disabled={!editing} /></div>
-            </div>
-          </div>
-        </form>
+      <form onSubmit={handleSave}>
+        <Card variant="outlined" elevation={0} sx={{ borderColor: 'divider', borderRadius: '12px', mb: 4 }}>
+          <CardContent sx={{ p: { xs: 3, md: 4 } }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.7rem', mb: 2 }}>
+              School Details
+            </Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={8}>
+                <TextField label="School Name" name="schoolName" value={formData.schoolName || ''} onChange={handleChange} disabled={!editing} fullWidth />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField label="Affiliation No." name="affiliationNo" value={formData.affiliationNo || ''} onChange={handleChange} disabled={!editing} fullWidth />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField label="Address" name="address" value={formData.address || ''} onChange={handleChange} disabled={!editing} fullWidth />
+              </Grid>
+              <Grid item xs={12} sm={5}>
+                <TextField label="City" name="city" value={formData.city || ''} onChange={handleChange} disabled={!editing} fullWidth />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField label="State" name="state" value={formData.state || ''} onChange={handleChange} disabled={!editing} fullWidth />
+              </Grid>
+              <Grid item xs={12} sm={3}>
+                <TextField label="PIN Code" name="pinCode" value={formData.pinCode || ''} onChange={handleChange} disabled={!editing} fullWidth />
+              </Grid>
+            </Grid>
 
-        <div className="card" style={{ maxWidth: '800px', marginTop: 'var(--space-lg)' }}>
-          <h4 style={{ marginBottom: 'var(--space-md)' }}>Account Information</h4>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', fontSize: 'var(--text-sm)' }}>
-            <div><span style={{ color: 'var(--text-tertiary)' }}>Email</span><br />{profile?.user?.email}</div>
-            <div><span style={{ color: 'var(--text-tertiary)' }}>Status</span><br /><span className={`badge ${profile?.user?.status === 'VERIFIED' ? 'badge-green' : 'badge-yellow'}`}>{profile?.user?.status}</span></div>
-            <div><span style={{ color: 'var(--text-tertiary)' }}>Registered</span><br />{new Date(profile?.user?.createdAt).toLocaleDateString()}</div>
-          </div>
-        </div>
-      </div>
-    </>
+            <Divider sx={{ my: 4 }} />
+
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.7rem', mb: 2 }}>
+              Administration
+            </Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={5}>
+                <TextField label="Contact No." value={profile?.contactNo || ''} disabled fullWidth helperText={editing ? "Contact admin to change" : ""} />
+              </Grid>
+              <Grid item xs={12} sm={7}>
+                <TextField label="Principal Name" name="principalName" value={formData.principalName || ''} onChange={handleChange} disabled={!editing} fullWidth />
+              </Grid>
+              <Grid item xs={12} sm={5}>
+                <TextField label="School Level" name="schoolLevel" value={formData.schoolLevel || ''} onChange={handleChange} disabled={!editing} fullWidth select>
+                  <MenuItem value="Primary">Primary</MenuItem>
+                  <MenuItem value="Secondary">Secondary</MenuItem>
+                  <MenuItem value="Senior Secondary">Senior Secondary</MenuItem>
+                </TextField>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField label="Board" name="board" value={formData.board || ''} onChange={handleChange} disabled={!editing} fullWidth select>
+                  <MenuItem value="CBSE">CBSE</MenuItem>
+                  <MenuItem value="ICSE">ICSE</MenuItem>
+                  <MenuItem value="State Board">State Board</MenuItem>
+                  <MenuItem value="IB">IB</MenuItem>
+                  <MenuItem value="Other">Other</MenuItem>
+                </TextField>
+              </Grid>
+              <Grid item xs={12} sm={3}>
+                <TextField label="Strength" name="strength" type="number" value={formData.strength || ''} onChange={handleChange} disabled={!editing} fullWidth />
+              </Grid>
+            </Grid>
+          </CardContent>
+        </Card>
+      </form>
+
+      {/* Account Info Card */}
+      <Card variant="outlined" elevation={0} sx={{ borderColor: 'divider', borderRadius: '12px' }}>
+        <CardContent sx={{ p: { xs: 3, md: 4 } }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.7rem', mb: 3 }}>
+            Account Information
+          </Typography>
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={4}>
+              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500, display: 'block', mb: 0.5 }}>Email Address</Typography>
+              <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>{profile?.user?.email}</Typography>
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500, display: 'block', mb: 0.5 }}>Verification Status</Typography>
+              <Chip
+                label={profile?.user?.status}
+                size="small"
+                sx={{
+                  fontWeight: 600, fontSize: '0.65rem', height: 22,
+                  bgcolor: profile?.user?.status === 'VERIFIED' ? '#D1FAE5' : '#FEF3C7',
+                  color: profile?.user?.status === 'VERIFIED' ? '#059669' : '#92400E',
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500, display: 'block', mb: 0.5 }}>Registered Date</Typography>
+              <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                {profile?.user?.createdAt ? new Date(profile.user.createdAt).toLocaleDateString() : '—'}
+              </Typography>
+            </Grid>
+          </Grid>
+        </CardContent>
+      </Card>
+    </Box>
   );
 }

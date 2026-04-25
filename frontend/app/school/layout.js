@@ -1,4 +1,8 @@
 'use client';
+/**
+ * School Layout — Dashboard layout wrapping the school section.
+ * Uses redesigned Sidebar with MUI components.
+ */
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Sidebar from '@/components/Sidebar';
 
@@ -35,9 +39,9 @@ const schoolNav = [
 export default function SchoolLayout({ children }) {
   return (
     <ProtectedRoute allowedRoles={['SCHOOL']}>
-      <div className="dashboard-layout">
+      <div style={{ display: 'flex', minHeight: '100vh', background: '#F8FAFC' }}>
         <Sidebar navItems={schoolNav} brandTitle="School Portal" />
-        <main className="main-content">{children}</main>
+        <main style={{ flex: 1, minWidth: 0, overflowY: 'auto' }}>{children}</main>
       </div>
     </ProtectedRoute>
   );

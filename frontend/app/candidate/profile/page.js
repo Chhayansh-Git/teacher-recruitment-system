@@ -1,7 +1,29 @@
 'use client';
+/**
+ * Candidate Profile — Wellfound-inspired profile view/edit page.
+ * GUARDRAIL: ALL state logic, API calls, handlers preserved exactly.
+ * Only the JSX return() block is redesigned with MUI components.
+ */
 import { useState, useEffect } from 'react';
 import { candidateAPI } from '@/lib/api';
 import { useToast } from '@/context/ToastContext';
+import {
+  Box,
+  Card,
+  CardContent,
+  TextField,
+  Button,
+  Typography,
+  Stack,
+  Divider,
+  MenuItem,
+  Chip,
+  CircularProgress,
+  Grid,
+} from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
+import CloseIcon from '@mui/icons-material/Close';
+import SaveIcon from '@mui/icons-material/Save';
 
 export default function CandidateProfilePage() {
   const toast = useToast();
@@ -50,83 +72,164 @@ export default function CandidateProfilePage() {
     finally { setSaving(false); }
   };
 
-  if (loading) return <div className="loading-page"><div className="spinner spinner-lg"></div></div>;
+  if (loading) return (
+    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+      <CircularProgress size={40} sx={{ color: '#2563EB' }} />
+    </Box>
+  );
 
   return (
-    <>
-      <div className="topbar">
-        <div className="topbar-left"><h1>My Profile</h1></div>
-        <div className="topbar-right">
-          {!editing ? (
-            <button className="btn btn-primary btn-sm" onClick={() => {
+    <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 900, mx: 'auto' }}>
+      {/* Page Header */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Typography variant="h4" sx={{ fontWeight: 700, color: 'text.primary' }}>
+          My Profile
+        </Typography>
+        {!editing ? (
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<EditIcon sx={{ fontSize: 16 }} />}
+            onClick={() => {
               setFormData({ ...profile, locationStr: (profile.locationInterested || []).join(', ') });
               setEditing(true);
-            }}>Edit Profile</button>
-          ) : (
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button className="btn btn-ghost btn-sm" onClick={() => setEditing(false)}>Cancel</button>
-              <button className="btn btn-primary btn-sm" onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
-            </div>
-          )}
-        </div>
-      </div>
+            }}
+            sx={{ borderColor: 'divider', color: 'text.primary', fontWeight: 600, borderRadius: '8px' }}
+          >
+            Edit Profile
+          </Button>
+        ) : (
+          <Stack direction="row" spacing={1}>
+            <Button variant="outlined" size="small" startIcon={<CloseIcon sx={{ fontSize: 16 }} />} onClick={() => setEditing(false)} sx={{ borderColor: 'divider', color: 'text.secondary', borderRadius: '8px' }}>
+              Cancel
+            </Button>
+            <Button variant="contained" size="small" startIcon={<SaveIcon sx={{ fontSize: 16 }} />} onClick={handleSave} disabled={saving} sx={{ borderRadius: '8px', fontWeight: 600 }}>
+              {saving ? 'Saving…' : 'Save'}
+            </Button>
+          </Stack>
+        )}
+      </Box>
 
-      <div className="page-content">
-        <div className="card" style={{ maxWidth: '800px' }}>
-          <h4 style={{ marginBottom: 'var(--space-md)', color: 'var(--blue-700)' }}>Personal Details</h4>
-          <div style={{ display: 'grid', gridTemplateColumns: '1.618fr 1fr', gap: '1rem' }}>
-            <div className="form-group"><label className="form-label">Name</label><input name="name" className="form-input" value={formData.name || ''} onChange={handleChange} disabled={!editing} /></div>
-            <div className="form-group"><label className="form-label">Gender</label>
-              <select name="gender" className="form-select" value={formData.gender || ''} onChange={handleChange} disabled={!editing}>
-                <option value="Male">Male</option><option value="Female">Female</option><option value="Other">Other</option>
-              </select></div>
-          </div>
-          <div className="form-group"><label className="form-label">Address</label><input name="address" className="form-input" value={formData.address || ''} onChange={handleChange} disabled={!editing} /></div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
-            <div className="form-group"><label className="form-label">Contact</label><input className="form-input" value={profile?.contactNo || ''} disabled style={{ opacity: 0.6 }} /></div>
-            <div className="form-group"><label className="form-label">WhatsApp</label><input name="whatsappNo" className="form-input" value={formData.whatsappNo || ''} onChange={handleChange} disabled={!editing} /></div>
-            <div className="form-group"><label className="form-label">DOB</label><input className="form-input" value={profile?.dob ? new Date(profile.dob).toLocaleDateString() : ''} disabled style={{ opacity: 0.6 }} /></div>
-          </div>
+      <Card variant="outlined" elevation={0} sx={{ borderColor: 'divider', borderRadius: '12px' }}>
+        <CardContent sx={{ p: { xs: 3, md: 4 } }}>
+          {/* Personal Details */}
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.7rem', mb: 2 }}>
+            Personal Details
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={8}>
+              <TextField label="Name" name="name" value={formData.name || ''} onChange={handleChange} disabled={!editing} fullWidth />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField label="Gender" name="gender" value={formData.gender || ''} onChange={handleChange} disabled={!editing} fullWidth select>
+                <MenuItem value="Male">Male</MenuItem>
+                <MenuItem value="Female">Female</MenuItem>
+                <MenuItem value="Other">Other</MenuItem>
+              </TextField>
+            </Grid>
+            <Grid item xs={12}>
+              <TextField label="Address" name="address" value={formData.address || ''} onChange={handleChange} disabled={!editing} fullWidth />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField label="Contact" value={profile?.contactNo || ''} disabled fullWidth />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField label="WhatsApp" name="whatsappNo" value={formData.whatsappNo || ''} onChange={handleChange} disabled={!editing} fullWidth />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField label="Date of Birth" value={profile?.dob ? new Date(profile.dob).toLocaleDateString() : ''} disabled fullWidth />
+            </Grid>
+          </Grid>
 
-          <h4 style={{ marginBottom: 'var(--space-md)', marginTop: 'var(--space-lg)', color: 'var(--blue-700)' }}>Professional Details</h4>
-          <div style={{ display: 'grid', gridTemplateColumns: '1.618fr 1fr', gap: '1rem' }}>
-            <div className="form-group"><label className="form-label">Primary Role</label><input name="primaryRole" className="form-input" value={formData.primaryRole || ''} onChange={handleChange} disabled={!editing} /></div>
-            <div className="form-group"><label className="form-label">Expected Salary (₹)</label><input name="expectedSalary" type="number" className="form-input" value={formData.expectedSalary || ''} onChange={handleChange} disabled={!editing} /></div>
-          </div>
-          <div className="form-group"><label className="form-label">Interested Locations</label>
-            {editing ? <input name="locationStr" className="form-input" value={formData.locationStr || ''} onChange={handleChange} placeholder="Delhi, Noida, Gurgaon" />
-              : <input className="form-input" value={(profile?.locationInterested || []).join(', ')} disabled />}
-          </div>
+          <Divider sx={{ my: 4 }} />
 
-          <h4 style={{ marginBottom: 'var(--space-md)', marginTop: 'var(--space-lg)', color: 'var(--blue-700)' }}>Qualifications</h4>
-          <div className="table-wrapper">
-            <table className="data-table">
-              <thead><tr><th>Degree</th><th>University</th><th>Year</th></tr></thead>
+          {/* Professional Details */}
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.7rem', mb: 2 }}>
+            Professional Details
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={8}>
+              <TextField label="Primary Role" name="primaryRole" value={formData.primaryRole || ''} onChange={handleChange} disabled={!editing} fullWidth />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField label="Expected Salary (₹)" name="expectedSalary" type="number" value={formData.expectedSalary || ''} onChange={handleChange} disabled={!editing} fullWidth />
+            </Grid>
+            <Grid item xs={12}>
+              {editing ? (
+                <TextField label="Interested Locations" name="locationStr" value={formData.locationStr || ''} onChange={handleChange} placeholder="Delhi, Noida, Gurgaon" fullWidth />
+              ) : (
+                <Box>
+                  <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500, mb: 0.5, display: 'block' }}>Interested Locations</Typography>
+                  <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+                    {(profile?.locationInterested || []).map((loc, i) => (
+                      <Chip key={i} label={loc} size="small" variant="outlined" sx={{ borderColor: 'divider', fontWeight: 500 }} />
+                    ))}
+                    {(profile?.locationInterested || []).length === 0 && (
+                      <Typography variant="body2" sx={{ color: 'text.secondary' }}>None specified</Typography>
+                    )}
+                  </Stack>
+                </Box>
+              )}
+            </Grid>
+          </Grid>
+
+          <Divider sx={{ my: 4 }} />
+
+          {/* Qualifications */}
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.7rem', mb: 2 }}>
+            Qualifications
+          </Typography>
+          <Box sx={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #E2E8F0' }}>
+                  {['Degree', 'University', 'Year'].map(h => (
+                    <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
               <tbody>
                 {(profile?.qualifications || []).map((q, i) => (
-                  <tr key={i}><td>{q.degree}</td><td>{q.university}</td><td>{q.year}</td></tr>
+                  <tr key={i} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                    <td style={{ padding: '12px 16px', fontWeight: 600, fontSize: '0.875rem', color: '#1E293B' }}>{q.degree}</td>
+                    <td style={{ padding: '12px 16px', fontSize: '0.875rem', color: '#64748B' }}>{q.university}</td>
+                    <td style={{ padding: '12px 16px', fontSize: '0.875rem', color: '#64748B' }}>{q.year}</td>
+                  </tr>
                 ))}
               </tbody>
             </table>
-          </div>
+          </Box>
 
           {(profile?.experience || []).length > 0 && (
             <>
-              <h4 style={{ marginBottom: 'var(--space-md)', marginTop: 'var(--space-lg)', color: 'var(--blue-700)' }}>Experience</h4>
-              <div className="table-wrapper">
-                <table className="data-table">
-                  <thead><tr><th>School</th><th>Role</th><th>Years</th></tr></thead>
+              <Divider sx={{ my: 4 }} />
+              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.7rem', mb: 2 }}>
+                Experience
+              </Typography>
+              <Box sx={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid #E2E8F0' }}>
+                      {['School', 'Role', 'Years'].map(h => (
+                        <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: '0.75rem', fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
                   <tbody>
                     {profile.experience.map((exp, i) => (
-                      <tr key={i}><td>{exp.school}</td><td>{exp.role}</td><td>{exp.years}</td></tr>
+                      <tr key={i} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                        <td style={{ padding: '12px 16px', fontWeight: 600, fontSize: '0.875rem', color: '#1E293B' }}>{exp.school}</td>
+                        <td style={{ padding: '12px 16px', fontSize: '0.875rem', color: '#64748B' }}>{exp.role}</td>
+                        <td style={{ padding: '12px 16px', fontSize: '0.875rem', color: '#64748B' }}>{exp.years}</td>
+                      </tr>
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </Box>
             </>
           )}
-        </div>
-      </div>
-    </>
+        </CardContent>
+      </Card>
+    </Box>
   );
 }

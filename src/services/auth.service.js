@@ -48,15 +48,61 @@ const otpService = require('./otp.service');
 const BCRYPT_ROUNDS = 12;
 
 /**
+ * sendRegistrationOTPs — Sends OTPs to email and/or phone.
+ */
+async function sendRegistrationOTPs(data) {
+  const promises = [];
+  
+  if (data.email) {
+    const emailOtp = otpService.generateOTP();
+    await otpService.storeOTP(data.email, 'register', emailOtp);
+    promises.push(otpService.sendOTPviaEmail(data.email, emailOtp));
+  }
+
+  if (data.phone) {
+    const phoneOtp = otpService.generateOTP();
+    await otpService.storeOTP(data.phone, 'register', phoneOtp);
+    promises.push(otpService.sendOTPviaSMS(data.phone, phoneOtp));
+  }
+
+  await Promise.all(promises);
+  return { message: 'OTPs sent successfully.' };
+}
+
+/**
+ * verifyRegistrationOTPs — Verifies OTPs and caches the verified status.
+ */
+async function verifyRegistrationOTPs(data) {
+  if (!data.isGoogleAuth) {
+    if (!data.emailOtp) throw ApiError.badRequest('Email OTP is required.', 'OTP_REQUIRED');
+    const emailResult = await otpService.verifyOTP(data.email, 'register', data.emailOtp);
+    if (!emailResult.valid) throw ApiError.badRequest(emailResult.error, 'OTP_INVALID');
+  }
+
+  if (!data.phoneOtp) throw ApiError.badRequest('Phone OTP is required.', 'OTP_REQUIRED');
+  const phoneResult = await otpService.verifyOTP(data.phone, 'register', data.phoneOtp);
+  if (!phoneResult.valid) throw ApiError.badRequest(phoneResult.error, 'OTP_INVALID');
+
+  if (data.isGoogleAuth) {
+    // For Google auth, email is already verified. We just verify phone.
+    await redis.set(`verified_contact:${data.phone}`, 'true', 'EX', 1800);
+  } else {
+    // Mark both as verified together
+    await redis.set(`verified_contact:${data.email}:${data.phone}`, 'true', 'EX', 1800);
+  }
+
+  return { message: 'Contacts verified successfully.' };
+}
+
+/**
  * registerSchool — Registers a new school account.
  *
- * FLOW (from TDD Section 2.1):
- * 1. Validate inputs (done by middleware before this)
- * 2. Check if email/phone already exists
- * 3. Check free school limit (first 200 are free)
- * 4. Create User + School records
- * 5. Generate and send OTPs to phone and email
- * 6. Return success (user must verify OTPs before they can log in)
+ * FLOW:
+ * 1. Validate inputs & Check if email/phone already exists
+ * 2. Ensure contacts are verified in Redis
+ * 3. Check free school limit
+ * 4. Create User (VERIFIED) + School records
+ * 5. Generate and email temporary password
  *
  * @param {Object} data — Validated registration data from request body
  * @returns {Object} — { userId, message }
@@ -98,6 +144,22 @@ async function registerSchool(data) {
     );
   }
 
+  // --- Ensure contacts were verified ---
+  let isEmailVerified = false;
+  let isPhoneVerified = false;
+
+  if (data.isGoogleAuth) {
+    isEmailVerified = await redis.get(`verified_contact:${data.email}:google`);
+    isPhoneVerified = await redis.get(`verified_contact:${data.phone}`);
+  } else {
+    isEmailVerified = await redis.get(`verified_contact:${data.email}:${data.phone}`);
+    isPhoneVerified = isEmailVerified;
+  }
+
+  if (!isEmailVerified || !isPhoneVerified) {
+    throw ApiError.forbidden('Contacts not verified or session expired. Please verify again.', 'NOT_VERIFIED');
+  }
+
   // --- Step 3: Check free school limit ---
   // Redis INCR is atomic — even if 10 schools register simultaneously,
   // each gets a unique counter value. No race conditions.
@@ -131,7 +193,7 @@ async function registerSchool(data) {
         phone: data.phone,
         password: hashedPassword,
         role: 'SCHOOL',
-        status: 'PENDING', // Can't log in until OTP verified
+        status: 'VERIFIED', // Set to VERIFIED immediately
         passwordChanged: false, // Must change password on first login
       },
     });
@@ -160,26 +222,18 @@ async function registerSchool(data) {
     return { user, school };
   });
 
-  // --- Step 6: Generate and send OTPs ---
-  const phoneOtp = otpService.generateOTP();
-  const emailOtp = otpService.generateOTP();
+  // Clean up Redis verification state
+  await redis.del(`verified_contact:${data.email}:${data.phone}`);
 
-  // Store OTPs in Redis (5-minute TTL)
-  await otpService.storeOTP(data.phone, 'register', phoneOtp);
-  await otpService.storeOTP(data.email, 'register', emailOtp);
+  // Email the temporary password to the school
+  const mailer = require('../utils/mailer');
+  await mailer.sendSchoolCredentials(data.email, tempPassword);
 
-  // Send OTPs via SMS and Email (simultaneously)
-  // Promise.all runs both in parallel — faster than doing one after another
-  await Promise.all([
-    otpService.sendOTPviaSMS(data.phone, phoneOtp),
-    otpService.sendOTPviaEmail(data.email, emailOtp),
-  ]);
-
-  logger.info(`School registered: ${data.schoolName} (${logger.maskEmail(data.email)}), isFree: ${isFree}`);
+  logger.info(`School registered & verified: ${data.schoolName} (${logger.maskEmail(data.email)}), isFree: ${isFree}`);
 
   return {
     userId: result.user.id,
-    message: 'Registration successful. Please verify your phone and email with the OTPs sent.',
+    message: 'Registration successful. Your credentials have been emailed to you.',
     tempPassword: process.env.NODE_ENV !== 'production' ? tempPassword : undefined,
     // Only include temp password in dev for testing
     isFree,
@@ -220,6 +274,22 @@ async function registerCandidate(data) {
     );
   }
 
+  // Ensure contacts were verified
+  let isEmailVerified = false;
+  let isPhoneVerified = false;
+
+  if (data.isGoogleAuth) {
+    isEmailVerified = await redis.get(`verified_contact:${data.email}:google`);
+    isPhoneVerified = await redis.get(`verified_contact:${data.phone}`);
+  } else {
+    isEmailVerified = await redis.get(`verified_contact:${data.email}:${data.phone}`);
+    isPhoneVerified = isEmailVerified;
+  }
+
+  if (!isEmailVerified || !isPhoneVerified) {
+    throw ApiError.forbidden('Contacts not verified or session expired. Please verify again.', 'NOT_VERIFIED');
+  }
+
   // Hash the password (candidate sets their own)
   const hashedPassword = await bcrypt.hash(data.password, BCRYPT_ROUNDS);
 
@@ -231,7 +301,7 @@ async function registerCandidate(data) {
         phone: data.phone,
         password: hashedPassword,
         role: 'CANDIDATE',
-        status: 'PENDING',
+        status: 'VERIFIED',
         passwordChanged: true, // Candidate set their own password — no need to force change
       },
     });
@@ -257,62 +327,122 @@ async function registerCandidate(data) {
     return { user, candidate };
   });
 
-  // Generate and send OTPs
-  const phoneOtp = otpService.generateOTP();
-  const emailOtp = otpService.generateOTP();
+  // Clean up Redis verification state
+  await redis.del(`verified_contact:${data.email}:${data.phone}`);
 
-  await otpService.storeOTP(data.phone, 'register', phoneOtp);
-  await otpService.storeOTP(data.email, 'register', emailOtp);
-
-  await Promise.all([
-    otpService.sendOTPviaSMS(data.phone, phoneOtp),
-    otpService.sendOTPviaEmail(data.email, emailOtp),
-  ]);
-
-  logger.info(`Candidate registered: ${data.name} (${logger.maskEmail(data.email)})`);
+  logger.info(`Candidate registered & verified: ${data.name} (${logger.maskEmail(data.email)})`);
 
   return {
     userId: result.user.id,
-    message: 'Registration successful. Please verify your phone and email with the OTPs sent.',
+    message: 'Registration successful. You can now log in.',
   };
 }
 
 /**
- * verifyRegistrationOTP — Verifies both phone and email OTPs.
- *
- * Both must be correct for the account to be verified.
- * After verification, the user status changes from PENDING → VERIFIED.
+ * googleInit — Step 1 of Onboarding via Google
+ * Verifies Google Token and caches email as VERIFIED.
+ */
+async function googleInit(token) {
+  try {
+    const { OAuth2Client } = require('google-auth-library');
+    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+    
+    // In dev mode without a real client ID, we might mock this
+    let email, name;
+    if (!process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID.startsWith('your_')) {
+      logger.warn('Google Client ID not configured. MOCKING Google Auth success.');
+      email = 'mockuser@gmail.com';
+      name = 'Mock User';
+    } else {
+      const ticket = await client.verifyIdToken({
+        idToken: token,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+      const payload = ticket.getPayload();
+      email = payload.email;
+      name = payload.name;
+    }
+
+    // Cache the email as verified for 30 minutes
+    await redis.set(`verified_contact:${email}:google`, 'true', 'EX', 1800);
+
+    return { email, name, message: 'Google authentication successful. Please verify your phone number to continue.' };
+  } catch (error) {
+    logger.error('Google Auth verification failed: ' + error.message);
+    throw ApiError.unauthorized('Invalid Google token.');
+  }
+}
+
+/**
+ * googleLogin — Unified Login via Google
+ */
+async function googleLogin(token) {
+  try {
+    const { OAuth2Client } = require('google-auth-library');
+    const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+    
+    let email, name;
+    if (!process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID.startsWith('your_')) {
+      email = 'mockuser@gmail.com';
+      name = 'Mock User';
+    } else {
+      const ticket = await client.verifyIdToken({
+        idToken: token,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+      const payload = ticket.getPayload();
+      email = payload.email;
+      name = payload.name;
+    }
+
+    const user = await prisma.user.findFirst({
+      where: { email, deletedAt: null },
+      include: {
+        school: { select: { id: true } },
+        candidate: { select: { id: true } },
+      },
+    });
+
+    if (!user) {
+      return { isNewUser: true, email, name };
+    }
+
+    if (user.status === 'PENDING') throw ApiError.forbidden('Please verify your account first.', 'ACCOUNT_NOT_VERIFIED');
+    if (user.status === 'DISMISSED') throw ApiError.forbidden('Your account has been suspended. Contact support.', 'ACCOUNT_DISMISSED');
+
+    const userForToken = {
+      id: user.id,
+      role: user.role,
+      schoolId: user.school?.id || null,
+      candidateId: user.candidate?.id || null,
+    };
+
+    const accessToken = tokenService.generateAccessToken(userForToken);
+    const refreshToken = await tokenService.generateRefreshToken(user.id);
+
+    return {
+      accessToken,
+      refreshToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        passwordChanged: user.passwordChanged,
+        schoolId: user.school?.id,
+        candidateId: user.candidate?.id,
+      },
+    };
+  } catch (error) {
+    logger.error('Google Login failed: ' + error.message);
+    throw ApiError.unauthorized('Invalid Google token.');
+  }
+}
+
+/**
+ * legacy verifyRegistrationOTP (deprecated)
  */
 async function verifyRegistrationOTP(data) {
-  // Verify phone OTP
-  const phoneResult = await otpService.verifyOTP(data.phone, 'register', data.phoneOtp);
-  if (!phoneResult.valid) {
-    throw ApiError.badRequest(phoneResult.error, 'OTP_INVALID');
-  }
-
-  // Verify email OTP
-  const emailResult = await otpService.verifyOTP(data.email, 'register', data.emailOtp);
-  if (!emailResult.valid) {
-    throw ApiError.badRequest(emailResult.error, 'OTP_INVALID');
-  }
-
-  // Both OTPs verified — update user status to VERIFIED
-  const user = await prisma.user.findFirst({
-    where: { email: data.email, phone: data.phone, deletedAt: null },
-  });
-
-  if (!user) {
-    throw ApiError.notFound('User not found. Please register again.');
-  }
-
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { status: 'VERIFIED' },
-  });
-
-  logger.info(`User verified: ${logger.maskEmail(data.email)}`);
-
-  return { message: 'Account verified successfully. You can now log in.' };
+  throw ApiError.badRequest('This endpoint is deprecated. Use inline stepper verification.');
 }
 
 /**
@@ -647,6 +777,10 @@ function generateTempPassword() {
 }
 
 module.exports = {
+  sendRegistrationOTPs,
+  verifyRegistrationOTPs,
+  googleInit,
+  googleLogin,
   registerSchool,
   registerCandidate,
   verifyRegistrationOTP,

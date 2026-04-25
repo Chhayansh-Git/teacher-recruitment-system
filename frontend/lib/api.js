@@ -85,6 +85,18 @@ async function refreshToken() {
 // AUTH API
 // ============================================
 export const authAPI = {
+  sendRegistrationOTPs: (data) =>
+    request('/auth/send-otp', { method: 'POST', body: JSON.stringify(data) }),
+
+  verifyRegistrationOTPs: (data) =>
+    request('/auth/verify-otp', { method: 'POST', body: JSON.stringify(data) }),
+
+  googleInit: (data) =>
+    request('/auth/google-init', { method: 'POST', body: JSON.stringify(data) }),
+
+  googleLogin: (data) =>
+    request('/auth/google-login', { method: 'POST', body: JSON.stringify(data) }),
+
   registerSchool: (data) =>
     request('/auth/register/school', { method: 'POST', body: JSON.stringify(data) }),
 

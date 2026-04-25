@@ -73,6 +73,22 @@ export function AuthProvider({ children }) {
     return res.data;
   }, [router]);
 
+  const googleLogin = useCallback(async (token) => {
+    const res = await authAPI.googleLogin({ token });
+    
+    if (res.data.isNewUser) {
+      return res.data; // Return early so login page can redirect
+    }
+
+    const userData = res.data.user;
+    setUser(userData);
+    localStorage.setItem('trs_user', JSON.stringify(userData));
+
+    const routes = { ADMIN: '/admin', SCHOOL: '/school', CANDIDATE: '/candidate' };
+    router.push(routes[userData.role] || '/');
+    return res.data;
+  }, [router]);
+
   const verifyAdminLogin = useCallback(async (data) => {
     const res = await authAPI.verifyAdminLogin(data);
     const userData = res.data.user;
@@ -107,7 +123,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, verifyAdminLogin, logout, updateUser, checkAuth }}>
+    <AuthContext.Provider value={{ user, loading, login, googleLogin, verifyAdminLogin, logout, updateUser, checkAuth }}>
       {children}
     </AuthContext.Provider>
   );

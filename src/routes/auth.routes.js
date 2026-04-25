@@ -52,10 +52,31 @@ const authController = require('../controllers/auth.controller');
 // ============================================================
 
 /**
+ * POST /api/v1/auth/send-otp
+ *
+ * Send OTPs for registration inline.
+ */
+router.post(
+  '/send-otp',
+  registerLimiter,
+  authController.sendRegistrationOTPs
+);
+
+/**
+ * POST /api/v1/auth/verify-otp
+ *
+ * Verify inline OTPs and cache status.
+ */
+router.post(
+  '/verify-otp',
+  loginLimiter,
+  authController.verifyRegistrationOTPs
+);
+
+/**
  * POST /api/v1/auth/register/school
  *
- * Register a new school.
- * Middleware chain: rate limit (3/hour) → validate body → handle
+ * Register a new school (Requires previously verified email/phone).
  */
 router.post(
   '/register/school',
@@ -98,6 +119,28 @@ router.post(
   loginLimiter,                         // Max 5 per 15 min per IP
   validate(loginSchema),
   authController.login
+);
+
+/**
+ * POST /api/v1/auth/google-init
+ *
+ * Initialize Google Registration.
+ */
+router.post(
+  '/google-init',
+  registerLimiter,
+  authController.googleInit
+);
+
+/**
+ * POST /api/v1/auth/google-login
+ *
+ * Log in with Google OAuth ID Token.
+ */
+router.post(
+  '/google-login',
+  loginLimiter,
+  authController.googleLogin
 );
 
 /**
