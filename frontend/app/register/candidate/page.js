@@ -31,8 +31,8 @@ import {
   Chip,
   InputAdornment,
 } from '@mui/material';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import RemoveCircleOutlineIcon from '@mui/icons-material/RemoveCircleOutline';
+import AddCircleIcon from '@mui/icons-material/AddCircle';
+import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 const steps = ['Verify Email', 'Personal Info', 'Professional', 'Experience'];
@@ -333,13 +333,13 @@ export default function CandidateRegisterPage() {
             <Box sx={{ mb: 4 }}>
               <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#0F172A' }}>📚 Qualifications</Typography>
-                <Button size="small" startIcon={<AddCircleOutlineIcon />} onClick={addQualification} sx={{ fontWeight: 600, borderRadius: '8px' }}>Add</Button>
+                <Button size="small" startIcon={<AddCircleIcon />} onClick={addQualification} sx={{ fontWeight: 600, borderRadius: '8px' }}>Add</Button>
               </Stack>
               {qualifications.map((q, i) => (
                 <Box key={i} sx={{ mb: 2, p: 2.5, bgcolor: '#FAFBFC', borderRadius: '12px', border: '1px solid #E2E8F0', position: 'relative' }}>
                   {i > 0 && (
                     <IconButton size="small" onClick={() => removeQualification(i)} sx={{ position: 'absolute', top: 8, right: 8, color: '#EF4444' }}>
-                      <RemoveCircleOutlineIcon fontSize="small" />
+                      <RemoveCircleIcon fontSize="small" />
                     </IconButton>
                   )}
                   <Grid container spacing={2}>
@@ -361,13 +361,13 @@ export default function CandidateRegisterPage() {
             <Box>
               <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#0F172A' }}>💼 Teaching Experience</Typography>
-                <Button size="small" startIcon={<AddCircleOutlineIcon />} onClick={addExperience} sx={{ fontWeight: 600, borderRadius: '8px' }}>Add</Button>
+                <Button size="small" startIcon={<AddCircleIcon />} onClick={addExperience} sx={{ fontWeight: 600, borderRadius: '8px' }}>Add</Button>
               </Stack>
               {experience.map((exp, i) => (
                 <Box key={i} sx={{ mb: 2, p: 2.5, bgcolor: '#FAFBFC', borderRadius: '12px', border: '1px solid #E2E8F0', position: 'relative' }}>
                   {i > 0 && (
                     <IconButton size="small" onClick={() => removeExperience(i)} sx={{ position: 'absolute', top: 8, right: 8, color: '#EF4444' }}>
-                      <RemoveCircleOutlineIcon fontSize="small" />
+                      <RemoveCircleIcon fontSize="small" />
                     </IconButton>
                   )}
                   <Grid container spacing={2}>
